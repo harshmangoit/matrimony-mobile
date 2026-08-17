@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/api_provider.dart';
+import '../../providers/locale_provider.dart';
 
 class MatchDetailScreen extends ConsumerStatefulWidget {
   final int candidateId;
@@ -41,26 +44,100 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = ref.tr("generic_error_msg");
           _isLoading = false;
         });
       }
     }
   }
 
+  Future<void> _makePhoneCall(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    final Uri url = Uri.parse('tel:$cleanPhone');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ref.tr("call_not_available"))),
+      );
+    }
+  }
+
+  Future<void> _openWhatsApp(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+    final Uri url = Uri.parse('https://wa.me/$cleanPhone?text=Namaste!%20I%20saw%20your%20matrimonial%20profile%20on%20Mango%20Matrimony.');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ref.tr("call_not_available"))),
+      );
+    }
+  }
+
+  void _shareProfile(Map<String, dynamic> profile, int score) {
+    final name = profile['first_name'] != null ? "${profile['first_name']} ${profile['last_name'] ?? ''}".trim() : "Verified Candidate";
+    final age = profile['calculated_age'] != null ? "${profile['calculated_age']} Yrs" : "";
+    final edu = profile['highest_education'] ?? '';
+    final prof = profile['profession'] ?? '';
+    final city = profile['current_city'] ?? '';
+
+    final shareText = '''
+🌸 Mango Matrimony - Matrimonial Profile Share 🌸
+
+Candidate: $name
+Age/Gender: $age ${profile['gender'] ?? ''}
+Education: $edu
+Profession: $prof
+Location: $city
+Compatibility Match Score: $score%
+
+Find compatible, verified family matches on Mango Matrimony app!
+''';
+
+    Share.share(shareText, subject: "Matrimonial Profile - $name");
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.watch(localeProvider); // Global dynamic language watch
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Matched Matrimonial Profile"),
+        title: Text(
+          ref.tr("matched_profile_title"),
+          style: const TextStyle(fontSize: 18),
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          if (_matchDetail != null)
+            IconButton(
+              icon: const Icon(Icons.share_rounded),
+              tooltip: ref.tr("share_profile"),
+              onPressed: () {
+                final profile = Map<String, dynamic>.from(_matchDetail?['visible_profile'] ?? {});
+                final score = _matchDetail?['match_score'] ?? 0;
+                _shareProfile(profile, score);
+              },
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                )
               : _buildContent(context),
     );
   }
@@ -69,80 +146,142 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
     final profile = Map<String, dynamic>.from(_matchDetail?['visible_profile'] ?? {});
     final score = _matchDetail?['match_score'] ?? 0;
     final breakdown = Map<String, dynamic>.from(_matchDetail?['breakdown'] ?? {});
+    final phone = profile['phone_number']?.toString();
 
     final name = profile.containsKey('first_name')
         ? "${profile['first_name']} ${profile['last_name'] ?? ''}".trim()
-        : "Verified Matrimonial Profile";
+        : ref.tr("matched_profile_title");
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Card
+          // Responsive Header Card (Prevents word wrap truncation on OnePlus 11 & narrow devices)
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            elevation: 2,
             child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.12),
-                    child: profile['profile_photo'] != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(32),
-                            child: Image.network(profile['profile_photo'], fit: BoxFit.cover),
-                          )
-                        : const Icon(Icons.person, size: 36, color: AppTheme.primaryRoyalMaroon),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: GoogleFonts.playfairDisplay(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.12),
+                        child: profile['profile_photo'] != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(30),
+                                child: Image.network(profile['profile_photo'], fit: BoxFit.cover),
+                              )
+                            : const Icon(Icons.person, size: 34, color: AppTheme.primaryRoyalMaroon),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.playfairDisplay(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            if (profile['calculated_age'] != null)
+                              Text(
+                                "${profile['calculated_age']} ${ref.tr("age_years")} • ${profile['gender'] ?? ''}",
+                                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                              ),
+                          ],
                         ),
-                        if (profile['calculated_age'] != null)
-                          Text(
-                            "${profile['calculated_age']} Yrs • ${profile['gender'] ?? ''}",
-                            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                          ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryRoyalMaroon,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
+                          color: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: Text(
-                      "$score% MATCH",
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      "$score% ${ref.tr("compatibility_match").toUpperCase()}",
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+
+          // Contact Actions & Share Section
+          Row(
+            children: [
+              if (phone != null && phone.isNotEmpty) ...[
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _makePhoneCall(phone),
+                    icon: const Icon(Icons.phone_rounded, size: 16),
+                    label: Text(ref.tr("call_now"), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _openWhatsApp(phone),
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                    label: Text(ref.tr("whatsapp_chat"), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _shareProfile(profile, score),
+                  icon: const Icon(Icons.share_rounded, size: 16),
+                  label: Text(ref.tr("share_profile"), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryGold,
+                    foregroundColor: Colors.black87,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
 
           // Compatibility Breakdown Chips
-          _buildSectionHeader("Compatibility Breakdown"),
+          _buildSectionHeader(ref.tr("compatibility_breakdown")),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -161,15 +300,15 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
           const SizedBox(height: 24),
 
           // Dynamic Permitted Fields Section
-          _buildSectionHeader("Permitted Profile Details"),
+          _buildSectionHeader(ref.tr("verified_matches")),
           const SizedBox(height: 6),
-          const Text(
-            "Notice: Below fields represent only the individual details permitted by the profile owner under field-level privacy settings.",
-            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+          Text(
+            ref.tr("permitted_details_notice"),
+            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 14),
 
-          // Render permitted fields dynamically (omit private fields!)
+          // Render permitted fields dynamically
           _buildDynamicFieldTiles(profile),
         ],
       ),
@@ -209,26 +348,21 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
       }
     }
 
-    addIfPresent('highest_education', 'Education Qualification', Icons.school);
-    addIfPresent('profession', 'Profession', Icons.work);
-    addIfPresent('company', 'Employer / Company', Icons.business);
-    addIfPresent('current_city', 'Current City', Icons.location_city);
-    addIfPresent('state', 'State', Icons.map);
-    addIfPresent('country', 'Country', Icons.flag);
-    addIfPresent('father_name', 'Father Name', Icons.family_restroom);
-    addIfPresent('mother_name', 'Mother Name', Icons.family_restroom);
-    addIfPresent('about', 'About Candidate', Icons.info_outline);
-    addIfPresent('hobbies', 'Hobbies', Icons.palette);
-    addIfPresent('lifestyle', 'Lifestyle', Icons.style);
-    addIfPresent('phone_number', 'Phone Number (Owner Authorized)', Icons.phone);
-    addIfPresent('email', 'Email Address (Owner Authorized)', Icons.email);
-    addIfPresent('exact_address', 'Exact Address (Owner Authorized)', Icons.home);
+    addIfPresent('highest_education', ref.tr("qualification"), Icons.school);
+    addIfPresent('profession', ref.tr("profession"), Icons.work);
+    addIfPresent('company', ref.tr("company"), Icons.business);
+    addIfPresent('current_city', ref.tr("city"), Icons.location_city);
+    addIfPresent('state', ref.tr("state"), Icons.map);
+    addIfPresent('father_name', ref.tr("father_name"), Icons.family_restroom);
+    addIfPresent('about', ref.tr("candidate_bio"), Icons.info_outline);
+    addIfPresent('phone_number', ref.tr("phone_number"), Icons.phone);
+    addIfPresent('email', ref.tr("candidate_email"), Icons.email);
 
     if (tiles.isEmpty) {
-      return const Card(
+      return Card(
         child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text("No additional public details enabled by owner."),
+          padding: const EdgeInsets.all(16),
+          child: Text(ref.tr("privacy_hidden_field")),
         ),
       );
     }

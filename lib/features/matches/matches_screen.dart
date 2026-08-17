@@ -28,6 +28,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(localeProvider); // Global dynamic language watch
     final childrenState = ref.watch(childrenProvider);
     final matchesState = ref.watch(matchesProvider);
     final selectedChild = childrenState.selectedChild;

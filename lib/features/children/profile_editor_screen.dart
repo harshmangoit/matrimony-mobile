@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_theme.dart';
@@ -126,6 +125,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(localeProvider); // Global dynamic language watch
     final childrenState = ref.watch(childrenProvider);
     final isEditing = widget.childId != null;
 
@@ -425,65 +425,6 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 16),
-
-              // Per-Field Privacy Action Card
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                color: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.05),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.shield_outlined, color: AppTheme.primaryRoyalMaroon, size: 22),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              ref.tr("privacy_field_control_title"),
-                              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryRoyalMaroon),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        ref.tr("photo_contact_guard_desc"),
-                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 42,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            final targetId = widget.childId ?? childrenState.selectedChild?.id;
-                            if (targetId != null) {
-                              context.push('/visibility-settings?child_id=$targetId');
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Save profile first to configure per-field visibility")),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.tune_rounded, size: 16),
-                          label: Text(
-                            ref.tr("configure_privacy_btn"),
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.primaryRoyalMaroon,
-                            side: const BorderSide(color: AppTheme.primaryRoyalMaroon),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
 
               const SizedBox(height: 32),

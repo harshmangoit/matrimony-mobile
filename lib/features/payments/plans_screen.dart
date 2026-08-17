@@ -24,6 +24,7 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(localeProvider); // Global dynamic language watch
     final paymentState = ref.watch(paymentProvider);
 
     return Scaffold(
@@ -72,15 +73,20 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
 
   Widget _buildPlanCard(BuildContext context, plan) {
     final isGold = plan.name.toUpperCase().contains('GOLD');
+    final isPremium = plan.name.toUpperCase().contains('PREMIUM');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 18),
-      elevation: isGold ? 4 : 2,
+      elevation: (isGold || isPremium) ? 4 : 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isGold ? AppTheme.secondaryGold : AppTheme.borderLight,
-          width: isGold ? 2 : 1,
+          color: isGold
+              ? AppTheme.secondaryGold
+              : isPremium
+                  ? AppTheme.primaryRoyalMaroon
+                  : AppTheme.borderLight,
+          width: (isGold || isPremium) ? 2 : 1,
         ),
       ),
       child: Padding(
@@ -115,6 +121,17 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Text("VIP", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
+                        ),
+                      ],
+                      if (isPremium) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryRoyalMaroon,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text("MOST POPULAR", style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
                         ),
                       ],
                     ],

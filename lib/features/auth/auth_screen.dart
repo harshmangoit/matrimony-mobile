@@ -56,6 +56,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final currentLocale = ref.watch(localeProvider);
+    final isHindi = currentLocale.languageCode == 'hi';
 
     return Scaffold(
       body: Container(
@@ -78,22 +79,50 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 children: [
-                  // Language Toggle Chip
+                  // High-Contrast Custom Segmented Language Switcher
                   Align(
                     alignment: Alignment.topRight,
-                    child: ActionChip(
-                      avatar: const Icon(Icons.language_rounded, size: 16, color: AppTheme.secondaryGold),
-                      label: Text(
-                        currentLocale.languageCode == 'en' ? 'हिंदी' : 'English',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white),
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppTheme.secondaryGold, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      backgroundColor: Colors.white.withValues(alpha: 0.15),
-                      onPressed: () {
-                        ref.read(localeProvider.notifier).setLocale(Locale(currentLocale.languageCode == 'en' ? 'hi' : 'en'));
-                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8, right: 6),
+                            child: Icon(Icons.language_rounded, size: 18, color: AppTheme.secondaryGold),
+                          ),
+                          _buildLanguageOption(
+                            label: "English",
+                            isSelected: !isHindi,
+                            onTap: () {
+                              ref.read(localeProvider.notifier).setLocale(const Locale('en'));
+                            },
+                          ),
+                          _buildLanguageOption(
+                            label: "हिंदी",
+                            isSelected: isHindi,
+                            onTap: () {
+                              ref.read(localeProvider.notifier).setLocale(const Locale('hi'));
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 14),
+
                   // Brand Header Section
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -137,7 +166,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                     children: [
                       _buildTrustBadge(Icons.verified_user_rounded, ref.tr("verified_profiles_title")),
                       _buildTrustBadge(Icons.shield_outlined, ref.tr("photo_contact_guard_title")),
-                      _buildTrustBadge(Icons.family_restroom_rounded, ref.tr("app_name")),
                     ],
                   ),
                   const SizedBox(height: 18),
@@ -223,6 +251,32 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.secondaryGold : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
           ),
         ),
       ),
