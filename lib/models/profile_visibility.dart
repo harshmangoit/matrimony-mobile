@@ -13,6 +13,9 @@ class ProfileVisibilityModel {
   final bool showAbout;
   final bool showLifestyle;
   final bool showHobbies;
+  final bool showMaritalStatus;
+  final bool showMotherTongue;
+  final bool showHeight;
 
   ProfileVisibilityModel({
     this.showName = true,
@@ -29,6 +32,9 @@ class ProfileVisibilityModel {
     this.showAbout = true,
     this.showLifestyle = true,
     this.showHobbies = true,
+    this.showMaritalStatus = true,
+    this.showMotherTongue = true,
+    this.showHeight = true,
   });
 
   factory ProfileVisibilityModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +53,9 @@ class ProfileVisibilityModel {
       showAbout: json['show_about'] ?? true,
       showLifestyle: json['show_lifestyle'] ?? true,
       showHobbies: json['show_hobbies'] ?? true,
+      showMaritalStatus: json['show_marital_status'] ?? true,
+      showMotherTongue: json['show_mother_tongue'] ?? true,
+      showHeight: json['show_height'] ?? true,
     );
   }
 
@@ -66,6 +75,9 @@ class ProfileVisibilityModel {
       'show_about': showAbout,
       'show_lifestyle': showLifestyle,
       'show_hobbies': showHobbies,
+      'show_marital_status': showMaritalStatus,
+      'show_mother_tongue': showMotherTongue,
+      'show_height': showHeight,
     };
   }
 
@@ -84,6 +96,9 @@ class ProfileVisibilityModel {
     bool? showAbout,
     bool? showLifestyle,
     bool? showHobbies,
+    bool? showMaritalStatus,
+    bool? showMotherTongue,
+    bool? showHeight,
   }) {
     return ProfileVisibilityModel(
       showName: showName ?? this.showName,
@@ -100,6 +115,9 @@ class ProfileVisibilityModel {
       showAbout: showAbout ?? this.showAbout,
       showLifestyle: showLifestyle ?? this.showLifestyle,
       showHobbies: showHobbies ?? this.showHobbies,
+      showMaritalStatus: showMaritalStatus ?? this.showMaritalStatus,
+      showMotherTongue: showMotherTongue ?? this.showMotherTongue,
+      showHeight: showHeight ?? this.showHeight,
     );
   }
 }

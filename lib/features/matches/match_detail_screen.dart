@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/api_provider.dart';
 import '../../providers/locale_provider.dart';
@@ -44,10 +46,17 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
           _isLoading = false;
         });
       }
-    } catch (_) {
+    } on DioException catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = ref.tr("generic_error_msg");
+          _errorMessage = e.error?.toString() ?? ref.tr("generic_error_msg");
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
           _isLoading = false;
         });
       }
@@ -128,16 +137,7 @@ Find compatible, verified family matches on Mango Matrimony app!
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      _errorMessage!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                )
+              ? _buildErrorScreen(context, _errorMessage!)
               : _buildContent(context),
     );
   }
@@ -195,11 +195,21 @@ Find compatible, verified family matches on Mango Matrimony app!
                               ),
                             ),
                             const SizedBox(height: 2),
-                            if (profile['calculated_age'] != null)
-                              Text(
-                                "${profile['calculated_age']} ${ref.tr("age_years")} • ${profile['gender'] ?? ''}",
-                                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                              ),
+                            () {
+                              final ageStr = profile['calculated_age'] != null ? "${profile['calculated_age']} ${ref.tr("age_years")}" : "";
+                              final genderStr = profile['gender'] != null ? ref.tr(profile['gender'].toString().toLowerCase()) : "";
+                              final headerDetails = [
+                                if (ageStr.isNotEmpty) ageStr,
+                                if (genderStr.isNotEmpty) genderStr,
+                              ].join(" • ");
+                              if (headerDetails.isNotEmpty) {
+                                return Text(
+                                  headerDetails,
+                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            }(),
                           ],
                         ),
                       ),
@@ -348,6 +358,9 @@ Find compatible, verified family matches on Mango Matrimony app!
       }
     }
 
+    addIfPresent('marital_status', ref.tr("marital_status"), Icons.favorite_border_rounded);
+    addIfPresent('mother_tongue', ref.tr("mother_tongue"), Icons.translate_rounded);
+    addIfPresent('height_cm', ref.tr("height_cm"), Icons.height_rounded);
     addIfPresent('highest_education', ref.tr("qualification"), Icons.school);
     addIfPresent('profession', ref.tr("profession"), Icons.work);
     addIfPresent('company', ref.tr("company"), Icons.business);
@@ -368,5 +381,103 @@ Find compatible, verified family matches on Mango Matrimony app!
     }
 
     return Column(children: tiles);
+  }
+
+  Widget _buildErrorScreen(BuildContext context, String errorMsg) {
+    final isSubscriptionError = errorMsg.toLowerCase().contains("subscription") ||
+                                 errorMsg.toLowerCase().contains("payment") ||
+                                 errorMsg.toLowerCase().contains("402");
+
+    if (isSubscriptionError) {
+      return Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(28),
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.workspace_premium_rounded,
+                      color: AppTheme.secondaryGold,
+                      size: 48,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    ref.tr("select_membership_title"),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryRoyalMaroon,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    ref.tr("select_membership_subtitle"),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        context.push('/plans');
+                      },
+                      icon: const Icon(Icons.flash_on_rounded, size: 18),
+                      label: Text(
+                        ref.tr("upgrade_membership"),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryRoyalMaroon,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              errorMsg,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

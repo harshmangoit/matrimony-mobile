@@ -100,6 +100,30 @@ class _VisibilitySettingsScreenState extends ConsumerState<VisibilitySettingsScr
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showAge: val)),
                   ),
                   _buildToggleTile(
+                    ref.tr("gender"),
+                    "Display candidate's gender to verified matches",
+                    _currentVis!.showGender,
+                    (val) => setState(() => _currentVis = _currentVis!.copyWith(showGender: val)),
+                  ),
+                  _buildToggleTile(
+                    ref.tr("height_cm"),
+                    "Display candidate's height (in cm)",
+                    _currentVis!.showHeight,
+                    (val) => setState(() => _currentVis = _currentVis!.copyWith(showHeight: val)),
+                  ),
+                  _buildToggleTile(
+                    ref.tr("marital_status"),
+                    "Display candidate's marital status",
+                    _currentVis!.showMaritalStatus,
+                    (val) => setState(() => _currentVis = _currentVis!.copyWith(showMaritalStatus: val)),
+                  ),
+                  _buildToggleTile(
+                    ref.tr("mother_tongue"),
+                    "Display candidate's mother tongue / primary language",
+                    _currentVis!.showMotherTongue,
+                    (val) => setState(() => _currentVis = _currentVis!.copyWith(showMotherTongue: val)),
+                  ),
+                  _buildToggleTile(
                     ref.tr("education_career_sec"),
                     "Display highest education and degree details",
                     _currentVis!.showEducation,
@@ -128,6 +152,24 @@ class _VisibilitySettingsScreenState extends ConsumerState<VisibilitySettingsScr
                     "Display profile photos in match feed & details",
                     _currentVis!.showPhotos,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showPhotos: val)),
+                  ),
+                  _buildToggleTile(
+                    ref.tr("candidate_bio"),
+                    "Display candidate introduction / about description",
+                    _currentVis!.showAbout,
+                    (val) => setState(() => _currentVis = _currentVis!.copyWith(showAbout: val)),
+                  ),
+                  _buildToggleTile(
+                    "Hobbies / Interests",
+                    "Display candidate's hobbies & interests",
+                    _currentVis!.showHobbies,
+                    (val) => setState(() => _currentVis = _currentVis!.copyWith(showHobbies: val)),
+                  ),
+                  _buildToggleTile(
+                    "Lifestyle & Values",
+                    "Display lifestyle choices & family values description",
+                    _currentVis!.showLifestyle,
+                    (val) => setState(() => _currentVis = _currentVis!.copyWith(showLifestyle: val)),
                   ),
 
                   const SizedBox(height: 24),

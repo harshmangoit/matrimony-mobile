@@ -274,7 +274,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
 
     final amount = order['amount'] ?? 0;
-    final planName = order['plan_name'] ?? 'Membership';
+    final planName = ref.tr(order['plan_name'] ?? 'Membership');
 
     final userEmail = authState.parent?.email ?? '';
     final userName = authState.parent?.fullName ?? '';

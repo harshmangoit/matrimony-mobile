@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/children_provider.dart';
 import '../../providers/locale_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileEditorScreen extends ConsumerStatefulWidget {
   final int? childId;
@@ -129,6 +130,18 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
     final childrenState = ref.watch(childrenProvider);
     final isEditing = widget.childId != null;
 
+    final targetChild = widget.childId != null
+        ? childrenState.children.firstWhere((c) => c.id == widget.childId, orElse: () => childrenState.selectedChild!)
+        : null;
+
+    bool isProfileLocked = childrenState.editLockMessage != null;
+    if (targetChild?.createdAt != null) {
+      final lockExpiry = targetChild!.createdAt!.add(const Duration(days: 7));
+      if (DateTime.now().isAfter(lockExpiry)) {
+        isProfileLocked = true;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? ref.tr("edit_profile_title") : ref.tr("create_profile_title")),
@@ -141,7 +154,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 7-DAY EDIT RESTRICTION LOCK BANNER (If locked)
-              if (childrenState.editLockMessage != null) ...[
+              if (isProfileLocked) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -155,7 +168,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          childrenState.editLockMessage!,
+                          childrenState.editLockMessage ?? ref.tr("locked_profile"),
                           style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                       ),
@@ -165,8 +178,13 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 const SizedBox(height: 20),
               ],
 
-              _buildSectionTitle(ref.tr("personal_info_sec")),
-              const SizedBox(height: 12),
+              AbsorbPointer(
+                absorbing: isProfileLocked,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionTitle(ref.tr("personal_info_sec")),
+                    const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -258,7 +276,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
               ),
               const SizedBox(height: 14),
 
-              TextFormField(
+               TextFormField(
                 controller: _motherTongueController,
                 decoration: InputDecoration(
                   labelText: ref.tr("mother_tongue"),
@@ -400,12 +418,25 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
 
               const SizedBox(height: 24),
               _buildSectionTitle(ref.tr("contact_privacy_sec")),
-              const SizedBox(height: 8),
-              Text(
-                ref.tr("privacy_field_control_desc"),
-                style: GoogleFonts.outfit(fontSize: 12, color: AppTheme.textSecondary),
-              ),
               const SizedBox(height: 12),
+
+              if (isEditing) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      context.push('/visibility-settings?child_id=${widget.childId}');
+                    },
+                    icon: const Icon(Icons.shield_outlined),
+                    label: Text(ref.tr("configure_privacy_btn")),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               Row(
                 children: [
@@ -434,7 +465,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: childrenState.isLoading
+                  onPressed: (childrenState.isLoading || isProfileLocked)
                       ? null
                       : () async {
                           if (_formKey.currentState!.validate()) {
@@ -498,6 +529,9 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 ),
               ),
               const SizedBox(height: 40),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

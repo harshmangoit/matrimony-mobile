@@ -40,6 +40,7 @@ class ChildProfileModel {
   
   final String status;
   final int completionPercentage;
+  final DateTime? createdAt;
 
   ChildProfileModel({
     required this.id,
@@ -77,6 +78,7 @@ class ChildProfileModel {
     this.email,
     required this.status,
     required this.completionPercentage,
+    this.createdAt,
   });
 
   factory ChildProfileModel.fromJson(Map<String, dynamic> json) {
@@ -116,6 +118,7 @@ class ChildProfileModel {
       email: json['email'],
       status: json['status'] ?? 'ACTIVE',
       completionPercentage: json['completion_percentage'] ?? 0,
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
     );
   }
 }

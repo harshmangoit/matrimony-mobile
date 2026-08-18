@@ -45,9 +45,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   }
 
   Future<void> _navigateNext() async {
-    // Artificial minimum delay for splash presentation
-    await Future.delayed(const Duration(milliseconds: 2400));
+    // 1. Wait for GoRouter to be mounted and ready
+    await Future.delayed(Duration.zero);
     if (!mounted) return;
+
+    // 2. Wait for auth provider to finish checking initial authentication
+    while (ref.read(authProvider).isLoading) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
+    }
 
     final authState = ref.read(authProvider);
 
@@ -55,7 +61,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       context.go('/auth');
     } else {
       // Check subscription
-      await ref.read(paymentProvider.notifier).loadPlansAndSubscription();
+      try {
+        await ref.read(paymentProvider.notifier).loadPlansAndSubscription();
+      } catch (_) {}
       final sub = ref.read(paymentProvider).activeSubscription;
 
       if (!mounted) return;

@@ -183,7 +183,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const Icon(Icons.workspace_premium_rounded, size: 14, color: Colors.black87),
                 const SizedBox(width: 4),
                 Text(
-                  "$subPlan PLAN",
+                  "${ref.tr(subPlan.toString().toUpperCase())} ${ref.tr("PLAN")}",
                   style: GoogleFonts.outfit(
                     color: Colors.black87,
                     fontWeight: FontWeight.bold,
@@ -300,7 +300,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          "${profile.calculatedAge} ${ref.tr("age_years")} • ${profile.gender} • ${profile.profession ?? ''}",
+                          "${profile.calculatedAge} ${ref.tr("age_years")} • ${ref.tr(profile.gender)} • ${profile.profession ?? ''}",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
@@ -326,7 +326,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
                       Text(
-                        profile.status,
+                        ref.tr(profile.status.toUpperCase()),
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
@@ -343,7 +343,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Row(
                 children: [
                   Text(
-                    "Score: ${profile.completionPercentage}%",
+                    "${ref.tr("score_label")}: ${profile.completionPercentage}%",
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(width: 8),

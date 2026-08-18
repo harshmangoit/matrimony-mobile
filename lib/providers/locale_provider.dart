@@ -36,6 +36,7 @@ final localeProvider = StateNotifierProvider<LocaleNotifier, Locale>((ref) {
 
 extension LocalizationExtension on WidgetRef {
   String tr(String key) {
-    return watch(localeProvider.notifier).translate(key);
+    final locale = watch(localeProvider);
+    return AppTranslations.getText(locale.languageCode, key);
   }
 }

@@ -102,7 +102,7 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
                     children: [
                       Flexible(
                         child: Text(
-                          plan.name,
+                          ref.tr(plan.name),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.playfairDisplay(
@@ -120,7 +120,7 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
                             color: AppTheme.secondaryGold,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Text("VIP", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
+                          child: Text(ref.tr("VIP"), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
                         ),
                       ],
                       if (isPremium) ...[
@@ -131,7 +131,7 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
                             color: AppTheme.primaryRoyalMaroon,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Text("MOST POPULAR", style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
+                          child: Text(ref.tr("MOST POPULAR"), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
                         ),
                       ],
                     ],
@@ -154,7 +154,7 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
               style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 14),
-            Text(plan.description, style: const TextStyle(fontSize: 14)),
+            Text(ref.tr(plan.description), style: const TextStyle(fontSize: 14)),
             const Divider(height: 24),
 
             // Features List
@@ -165,7 +165,7 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
                       const Icon(Icons.check_circle_rounded, color: Colors.green, size: 18),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(f, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                        child: Text(ref.tr(f.toString()), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       ),
                     ],
                   ),
