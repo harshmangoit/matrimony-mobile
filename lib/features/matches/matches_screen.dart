@@ -36,6 +36,23 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("${ref.tr("verified_matches")} (${selectedChild?.firstName ?? ''})"),
+        actions: [
+          TextButton.icon(
+            onPressed: () async {
+              final currentCode = ref.read(localeProvider).languageCode;
+              final newCode = currentCode == 'hi' ? 'en' : 'hi';
+              await ref.read(localeProvider.notifier).setLocale(Locale(newCode));
+              if (selectedChild != null) {
+                ref.read(matchesProvider.notifier).loadMatches(selectedChild.id);
+              }
+            },
+            icon: const Icon(Icons.language_rounded, size: 18, color: AppTheme.primaryRoyalMaroon),
+            label: Text(
+              ref.watch(localeProvider).languageCode == 'hi' ? 'English' : 'हिंदी',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryRoyalMaroon),
+            ),
+          ),
+        ],
       ),
       body: selectedChild == null
           ? Center(child: Text(ref.tr("no_candidates_msg")))

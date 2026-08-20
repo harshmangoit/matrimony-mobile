@@ -46,9 +46,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> checkInitialAuth() async {
     state = state.copyWith(isLoading: true);
     final token = await _apiClient.getToken();
+    if (!mounted) return;
     if (token != null && token.isNotEmpty) {
       try {
         final resp = await _apiClient.dio.get('/parent/profile');
+        if (!mounted) return;
         final parent = ParentModel.fromJson(resp.data);
         state = state.copyWith(
           isAuthenticated: true,
@@ -61,6 +63,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await _apiClient.clearSession();
       }
     }
+    if (!mounted) return;
     state = state.copyWith(isAuthenticated: false, isLoading: false);
   }
 
@@ -84,6 +87,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _apiClient.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
 
       final parentResp = await _apiClient.dio.get('/parent/profile');
+      if (!mounted) return false;
       final parent = ParentModel.fromJson(parentResp.data);
 
       state = state.copyWith(
@@ -94,12 +98,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       final msg = (e.error != null && e.error.toString().isNotEmpty)
           ? e.error.toString()
           : (e.message ?? "Unable to connect to backend server. Please verify backend is running.");
       state = state.copyWith(isLoading: false, errorMessage: msg);
       return false;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       return false;
     }
@@ -121,6 +127,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _apiClient.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
 
       final parentResp = await _apiClient.dio.get('/parent/profile');
+      if (!mounted) return false;
       final parent = ParentModel.fromJson(parentResp.data);
 
       state = state.copyWith(
@@ -131,12 +138,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       final msg = (e.error != null && e.error.toString().isNotEmpty)
           ? e.error.toString()
           : (e.message ?? "Unable to connect to backend server. Please verify backend is running.");
       state = state.copyWith(isLoading: false, errorMessage: msg);
       return false;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       return false;
     }
@@ -145,6 +154,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> reloadProfile() async {
     try {
       final parentResp = await _apiClient.dio.get('/parent/profile');
+      if (!mounted) return;
       final parent = ParentModel.fromJson(parentResp.data);
       state = state.copyWith(parent: parent);
     } catch (_) {}
@@ -155,6 +165,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _apiClient.dio.post('/auth/logout');
     } catch (_) {}
     await _apiClient.clearSession();
+    if (!mounted) return;
     state = AuthState();
   }
 }

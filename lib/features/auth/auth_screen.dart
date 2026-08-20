@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/payment_provider.dart';
 import '../../providers/locale_provider.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -328,12 +330,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
               child: ElevatedButton(
                 onPressed: authState.isLoading
                     ? null
-                    : () {
+                    : () async {
                         if (_loginFormKey.currentState!.validate()) {
-                          ref.read(authProvider.notifier).login(
+                          final success = await ref.read(authProvider.notifier).login(
                                 email: _loginEmailController.text.trim(),
                                 password: _loginPasswordController.text,
                               );
+                          if (success && mounted) {
+                            await ref.read(paymentProvider.notifier).loadPlansAndSubscription();
+                            final sub = ref.read(paymentProvider).activeSubscription;
+                            if (mounted) {
+                              if (sub != null && sub['status'] == 'ACTIVE') {
+                                context.go('/dashboard');
+                              } else {
+                                context.go('/plans');
+                              }
+                            }
+                          }
                         }
                       },
                 style: ElevatedButton.styleFrom(
@@ -447,14 +460,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
               child: ElevatedButton(
                 onPressed: authState.isLoading
                     ? null
-                    : () {
+                    : () async {
                         if (_registerFormKey.currentState!.validate()) {
-                          ref.read(authProvider.notifier).register(
+                          final success = await ref.read(authProvider.notifier).register(
                                 fullName: _regNameController.text.trim(),
                                 email: _regEmailController.text.trim(),
                                 password: _regPasswordController.text,
                                 confirmPassword: _regConfirmPasswordController.text,
                               );
+                          if (success && mounted) {
+                            await ref.read(paymentProvider.notifier).loadPlansAndSubscription();
+                            if (mounted) {
+                              context.go('/plans');
+                            }
+                          }
                         }
                       },
                 style: ElevatedButton.styleFrom(

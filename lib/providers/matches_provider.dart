@@ -37,11 +37,14 @@ class MatchesNotifier extends StateNotifier<MatchesState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final resp = await _apiClient.dio.get('/matches?child_id=$childId');
+      if (!mounted) return;
       final list = (resp.data as List).map((x) => MatchItemModel.fromJson(x)).toList();
       state = state.copyWith(matches: list, isLoading: false);
     } on DioException catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.error.toString());
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }

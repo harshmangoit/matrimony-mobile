@@ -3,15 +3,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConstants {
-  static const String appName = "Mango Matrimony";
+  static const String appName = "Matrimonial App";
   static const String appTagline = "Trusted Family Matrimonial Platform";
   
   static String get baseUrl {
     // 1. Check .env file loaded via flutter_dotenv
-    final dotEnvUrl = dotenv.env['API_BASE_URL'];
-    if (dotEnvUrl != null && dotEnvUrl.trim().isNotEmpty) {
-      return dotEnvUrl.trim();
-    }
+    try {
+      if (dotenv.isInitialized) {
+        final dotEnvUrl = dotenv.env['API_BASE_URL'];
+        if (dotEnvUrl != null && dotEnvUrl.trim().isNotEmpty) {
+          return dotEnvUrl.trim();
+        }
+      }
+    } catch (_) {}
 
     // 2. Check build flag (--dart-define=API_BASE_URL=https://your-server.com)
     const envUrl = String.fromEnvironment('API_BASE_URL');

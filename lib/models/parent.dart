@@ -6,6 +6,7 @@ class ParentModel {
   final String relationshipToChild;
   final String status;
   final String subscriptionStatus;
+  final int maxProfilesAllowed;
 
   ParentModel({
     required this.id,
@@ -15,6 +16,7 @@ class ParentModel {
     required this.relationshipToChild,
     required this.status,
     required this.subscriptionStatus,
+    this.maxProfilesAllowed = 1,
   });
 
   factory ParentModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class ParentModel {
       relationshipToChild: json['relationship_to_child'] ?? 'Parent',
       status: json['status'] ?? 'ACTIVE',
       subscriptionStatus: json['subscription_status'] ?? 'FREE',
+      maxProfilesAllowed: json['max_profiles_allowed'] ?? 1,
     );
   }
 }

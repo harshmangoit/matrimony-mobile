@@ -5,6 +5,7 @@ class PlanModel {
   final double priceInr;
   final int durationDays;
   final List<String> features;
+  final String category;
 
   PlanModel({
     required this.id,
@@ -13,6 +14,7 @@ class PlanModel {
     required this.priceInr,
     required this.durationDays,
     required this.features,
+    this.category = 'D',
   });
 
   factory PlanModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class PlanModel {
       priceInr: (json['price_inr'] as num).toDouble(),
       durationDays: json['duration_days'] ?? 30,
       features: List<String>.from(json['features'] ?? []),
+      category: json['category'] ?? 'D',
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../core/theme/app_theme.dart';
@@ -82,12 +83,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       return;
     }
 
+    final langCode = ref.read(localeProvider).languageCode;
     var options = {
       'key': keyId,
       'amount': amountInPaise,
-      'name': 'Mango Matrimony',
+      'name': ref.tr("app_name"),
       'description': '${order['plan_name']} Subscription Plan',
       'order_id': order['order_id'],
+      'language': langCode,
       'prefill': {
         'contact': userPhone,
         'email': userEmail,
@@ -247,7 +250,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(dlgContext).pop();
-              Navigator.of(context).pop();
+              context.go('/dashboard');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryRoyalMaroon,
@@ -274,7 +277,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
 
     final amount = order['amount'] ?? 0;
-    final planName = ref.tr(order['plan_name'] ?? 'Membership');
+    final planName = order['plan_name'] ?? ref.tr("active_subscription");
 
     final userEmail = authState.parent?.email ?? '';
     final userName = authState.parent?.fullName ?? '';
@@ -348,7 +351,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             ),
             const SizedBox(height: 12),
 
-            _buildPaymentMethodTile(ref.tr("payment_method_upi"), Icons.qr_code_scanner_rounded, "UPI", badgeText: "FAST"),
+            _buildPaymentMethodTile(ref.tr("payment_method_upi"), Icons.qr_code_scanner_rounded, "UPI", badgeText: ref.tr("badge_fast")),
             _buildPaymentMethodTile(ref.tr("payment_method_card"), Icons.credit_card_rounded, "CARD"),
             _buildPaymentMethodTile(ref.tr("payment_method_netbanking"), Icons.account_balance_rounded, "NETBANKING"),
 

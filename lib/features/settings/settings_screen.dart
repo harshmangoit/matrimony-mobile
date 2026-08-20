@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/payment_provider.dart';
+import '../../providers/children_provider.dart';
 import '../../providers/locale_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -110,9 +111,11 @@ class SettingsScreen extends ConsumerWidget {
                         DropdownMenuItem(value: 'en', child: Text('English')),
                         DropdownMenuItem(value: 'hi', child: Text('हिंदी (Hindi)')),
                       ],
-                      onChanged: (langCode) {
+                      onChanged: (langCode) async {
                         if (langCode != null) {
-                          ref.read(localeProvider.notifier).setLocale(Locale(langCode));
+                          await ref.read(localeProvider.notifier).setLocale(Locale(langCode));
+                          ref.read(childrenProvider.notifier).loadChildren();
+                          ref.read(authProvider.notifier).reloadProfile();
                         }
                       },
                     ),

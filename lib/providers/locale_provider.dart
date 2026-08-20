@@ -7,15 +7,17 @@ const _storage = FlutterSecureStorage();
 const _localeKey = 'app_locale';
 
 class LocaleNotifier extends StateNotifier<Locale> {
-  LocaleNotifier() : super(const Locale('en')) {
+  LocaleNotifier() : super(const Locale('hi')) {
     _loadSavedLocale();
   }
 
   Future<void> _loadSavedLocale() async {
-    final savedCode = await _storage.read(key: _localeKey);
-    if (savedCode != null && (savedCode == 'en' || savedCode == 'hi')) {
-      state = Locale(savedCode);
-    }
+    try {
+      final savedCode = await _storage.read(key: _localeKey);
+      if (savedCode != null && (savedCode == 'en' || savedCode == 'hi')) {
+        state = Locale(savedCode);
+      }
+    } catch (_) {}
   }
 
   Future<void> setLocale(Locale newLocale) async {

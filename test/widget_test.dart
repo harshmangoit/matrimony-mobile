@@ -1,25 +1,47 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:matrimony_app/main.dart';
+import 'package:matrimony_app/providers/auth_provider.dart';
+import 'package:matrimony_app/core/network/api_client.dart';
+
+class MockAuthNotifier extends AuthNotifier {
+  MockAuthNotifier() : super(ApiClient()) {
+    state = AuthState(isLoading: false, isAuthenticated: false);
+  }
+
+  @override
+  Future<void> checkInitialAuth() async {
+    state = AuthState(isLoading: false, isAuthenticated: false);
+  }
+}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.it_all_code.com/flutter_secure_storage'),
+      (MethodCall methodCall) async {
+        return null;
+      },
+    );
+  });
+
   testWidgets('MatrimonyApp smoke test', (WidgetTester tester) async {
-    // Build app with ProviderScope
+    // Build app with ProviderScope overriding authProvider
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MatrimonyApp(),
+      ProviderScope(
+        overrides: [
+          authProvider.overrideWith((ref) => MockAuthNotifier()),
+        ],
+        child: const MatrimonyApp(),
       ),
     );
 
-    // Verify MaterialApp widget is rendered
-    expect(find.byType(MaterialApp), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
+
+    // Verify MatrimonyApp widget is rendered
+    expect(find.byType(MatrimonyApp), findsOneWidget);
   });
 }

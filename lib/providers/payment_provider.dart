@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 import '../models/plan.dart';
 import 'api_provider.dart';
+import 'auth_provider.dart';
 
 class PaymentState {
   final bool isLoading;
@@ -42,16 +43,19 @@ class PaymentState {
 
 class PaymentNotifier extends StateNotifier<PaymentState> {
   final ApiClient _apiClient;
+  final Ref _ref;
 
-  PaymentNotifier(this._apiClient) : super(PaymentState());
+  PaymentNotifier(this._apiClient, this._ref) : super(PaymentState());
 
   Future<void> loadPlansAndSubscription() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final plansResp = await _apiClient.dio.get('/plans');
+      if (!mounted) return;
       final plansList = (plansResp.data as List).map((x) => PlanModel.fromJson(x)).toList();
 
       final subResp = await _apiClient.dio.get('/subscription');
+      if (!mounted) return;
       
       state = state.copyWith(
         plans: plansList,
@@ -59,20 +63,24 @@ class PaymentNotifier extends StateNotifier<PaymentState> {
         isLoading: false,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
-  Future<Map<String, dynamic>?> createOrder(int planId) async {
+  Future<Map<String, dynamic>?> createOrder(int planId, {int quantity = 1}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final resp = await _apiClient.dio.post('/payments/order', data: {
         'plan_id': planId,
+        'quantity': quantity,
       });
+      if (!mounted) return null;
       final orderData = Map<String, dynamic>.from(resp.data);
       state = state.copyWith(isLoading: false, currentRazorpayOrder: orderData);
       return orderData;
     } on DioException catch (e) {
+      if (!mounted) return null;
       state = state.copyWith(isLoading: false, errorMessage: e.error.toString());
       return null;
     }
@@ -90,12 +98,18 @@ class PaymentNotifier extends StateNotifier<PaymentState> {
         'razorpay_payment_id': paymentId,
         'razorpay_signature': signature,
       });
+      if (!mounted) return false;
 
       final msg = resp.data['message']?.toString() ?? 'Subscription activated!';
       await loadPlansAndSubscription();
+      try {
+        await _ref.read(authProvider.notifier).checkInitialAuth();
+      } catch (_) {}
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, successMessage: msg);
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.error.toString());
       return false;
     }
@@ -104,5 +118,5 @@ class PaymentNotifier extends StateNotifier<PaymentState> {
 
 final paymentProvider = StateNotifierProvider<PaymentNotifier, PaymentState>((ref) {
   final client = ref.watch(apiClientProvider);
-  return PaymentNotifier(client);
+  return PaymentNotifier(client, ref);
 });

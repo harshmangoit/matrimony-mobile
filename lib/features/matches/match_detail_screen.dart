@@ -77,7 +77,8 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
 
   Future<void> _openWhatsApp(String phone) async {
     final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
-    final Uri url = Uri.parse('https://wa.me/$cleanPhone?text=Namaste!%20I%20saw%20your%20matrimonial%20profile%20on%20Mango%20Matrimony.');
+    final appTitle = ref.tr("app_name");
+    final Uri url = Uri.parse('https://wa.me/$cleanPhone?text=Namaste!%20I%20saw%20your%20matrimonial%20profile%20on%20$appTitle.');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else if (mounted) {
@@ -95,7 +96,7 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
     final city = profile['current_city'] ?? '';
 
     final shareText = '''
-🌸 Mango Matrimony - Matrimonial Profile Share 🌸
+🌸 Matrimonial App - Matrimonial Profile Share 🌸
 
 Candidate: $name
 Age/Gender: $age ${profile['gender'] ?? ''}
@@ -104,7 +105,7 @@ Profession: $prof
 Location: $city
 Compatibility Match Score: $score%
 
-Find compatible, verified family matches on Mango Matrimony app!
+Find compatible, verified family matches on Matrimonial app!
 ''';
 
     Share.share(shareText, subject: "Matrimonial Profile - $name");

@@ -14,6 +14,8 @@ class PlansScreen extends ConsumerStatefulWidget {
 }
 
 class _PlansScreenState extends ConsumerState<PlansScreen> {
+  final Map<int, int> _selectedQuantities = {};
+
   @override
   void initState() {
     super.initState();
@@ -72,8 +74,10 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
   }
 
   Widget _buildPlanCard(BuildContext context, plan) {
-    final isGold = plan.name.toUpperCase().contains('GOLD');
-    final isPremium = plan.name.toUpperCase().contains('PREMIUM');
+    final isGold = plan.name.toUpperCase().contains('GOLD') || plan.name.contains('सेलिब्रिटी');
+    final isPremium = plan.name.toUpperCase().contains('PREMIUM') || plan.name.contains('वीआईपी');
+    final currentQty = _selectedQuantities[plan.id] ?? 1;
+    final totalAmount = (plan.priceInr * currentQty).toInt();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 18),
@@ -102,7 +106,7 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
                     children: [
                       Flexible(
                         child: Text(
-                          ref.tr(plan.name),
+                          plan.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.playfairDisplay(
@@ -139,7 +143,7 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  "₹${plan.priceInr.toInt()}",
+                  "₹$totalAmount",
                   style: GoogleFonts.outfit(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
@@ -153,24 +157,121 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
               "${ref.tr("duration_label")}: ${plan.durationDays} ${ref.tr("days_validity")}",
               style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    "${ref.tr("category_label")}: ${plan.category}",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.primaryRoyalMaroon),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 14),
-            Text(ref.tr(plan.description), style: const TextStyle(fontSize: 14)),
-            const Divider(height: 24),
+            Text(plan.description, style: const TextStyle(fontSize: 14)),
+            const Divider(height: 20),
 
             // Features List
             ...plan.features.map((f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
                     children: [
                       const Icon(Icons.check_circle_rounded, color: Colors.green, size: 18),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(ref.tr(f.toString()), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                        child: Text(f.toString(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                       ),
                     ],
                   ),
                 )),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
+
+            // Profile Quantity Selector Box
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.15)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ref.tr("select_profile_slots_label"),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "₹${plan.priceInr.toInt()} × $currentQty ${currentQty > 1 ? ref.tr('profiles_unit') : ref.tr('profile_unit')} = ₹$totalAmount",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isGold ? Colors.amber.shade900 : AppTheme.primaryRoyalMaroon,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppTheme.borderLight),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              onPressed: currentQty > 1
+                                  ? () {
+                                      setState(() {
+                                        _selectedQuantities[plan.id] = currentQty - 1;
+                                      });
+                                    }
+                                  : null,
+                              icon: const Icon(Icons.remove_rounded, size: 20),
+                              color: AppTheme.primaryRoyalMaroon,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              child: Text(
+                                "$currentQty",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () {
+                                setState(() {
+                                  _selectedQuantities[plan.id] = currentQty + 1;
+                                });
+                              },
+                              icon: const Icon(Icons.add_rounded, size: 20),
+                              color: AppTheme.primaryRoyalMaroon,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
 
             SizedBox(
               width: double.infinity,
@@ -180,7 +281,7 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
                   final router = GoRouter.of(context);
                   final order = await ref
                       .read(paymentProvider.notifier)
-                      .createOrder(plan.id);
+                      .createOrder(plan.id, quantity: currentQty);
                   if (order != null) {
                     router.push('/checkout');
                   }

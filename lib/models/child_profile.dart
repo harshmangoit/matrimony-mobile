@@ -26,9 +26,17 @@ class ChildProfileModel {
   final String? exactAddress;
   
   final String? fatherName;
+  final String? grandfatherName;
   final String? motherName;
   final String? siblings;
+  final int? familyMembersCount;
   final String? familyBackground;
+  
+  final String? tehsil;
+  final String? villageTown;
+  final String? postOffice;
+  final String? pincode;
+  final String? birthTime;
   
   final String? about;
   final String? hobbies;
@@ -38,6 +46,17 @@ class ChildProfileModel {
   final String? phoneNumber;
   final String? email;
   
+  final String category;
+  final String searchType;
+  final String manglikStatus;
+  final double? weightKg;
+  final String? complexion;
+  
+  final String? gotraSelf;
+  final String? gotraMama;
+  final String? gotraPaternalNani;
+  final String? gotraMaternalNani;
+
   final String status;
   final int completionPercentage;
   final DateTime? createdAt;
@@ -53,6 +72,15 @@ class ChildProfileModel {
     required this.heightCm,
     required this.maritalStatus,
     required this.motherTongue,
+    this.category = 'A',
+    this.searchType = 'Engagement',
+    this.manglikStatus = 'Normal',
+    this.weightKg,
+    this.complexion,
+    this.gotraSelf,
+    this.gotraMama,
+    this.gotraPaternalNani,
+    this.gotraMaternalNani,
     this.highestEducation,
     this.degree,
     this.institution,
@@ -66,9 +94,16 @@ class ChildProfileModel {
     this.hometown,
     this.exactAddress,
     this.fatherName,
+    this.grandfatherName,
     this.motherName,
     this.siblings,
+    this.familyMembersCount,
     this.familyBackground,
+    this.tehsil,
+    this.villageTown,
+    this.postOffice,
+    this.pincode,
+    this.birthTime,
     this.about,
     this.hobbies,
     this.lifestyle,
@@ -93,6 +128,15 @@ class ChildProfileModel {
       heightCm: json['height_cm'] ?? 165,
       maritalStatus: json['marital_status'] ?? 'Never Married',
       motherTongue: json['mother_tongue'] ?? 'Hindi',
+      category: json['category'] ?? 'A',
+      searchType: json['search_type'] ?? 'Engagement',
+      manglikStatus: json['manglik_status'] ?? 'Normal',
+      weightKg: json['weight_kg'] != null ? double.tryParse(json['weight_kg'].toString()) : null,
+      complexion: json['complexion'],
+      gotraSelf: json['gotra_self'],
+      gotraMama: json['gotra_mama'],
+      gotraPaternalNani: json['gotra_paternal_nani'],
+      gotraMaternalNani: json['gotra_maternal_nani'],
       highestEducation: json['highest_education'],
       degree: json['degree'],
       institution: json['institution'],
@@ -106,9 +150,16 @@ class ChildProfileModel {
       hometown: json['hometown'],
       exactAddress: json['exact_address'],
       fatherName: json['father_name'],
+      grandfatherName: json['grandfather_name'],
       motherName: json['mother_name'],
       siblings: json['siblings'],
+      familyMembersCount: json['family_members_count'] != null ? int.tryParse(json['family_members_count'].toString()) : null,
       familyBackground: json['family_background'],
+      tehsil: json['tehsil'],
+      villageTown: json['village_town'],
+      postOffice: json['post_office'],
+      pincode: json['pincode'],
+      birthTime: json['birth_time'],
       about: json['about'],
       hobbies: json['hobbies'],
       lifestyle: json['lifestyle'],

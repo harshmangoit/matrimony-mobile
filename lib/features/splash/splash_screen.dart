@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/payment_provider.dart';
+import '../../providers/locale_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -45,28 +46,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   }
 
   Future<void> _navigateNext() async {
-    // 1. Wait for GoRouter to be mounted and ready
     await Future.delayed(Duration.zero);
     if (!mounted) return;
-
-    // 2. Wait for auth provider to finish checking initial authentication
-    while (ref.read(authProvider).isLoading) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return;
-    }
 
     final authState = ref.read(authProvider);
 
     if (!authState.isAuthenticated) {
       context.go('/auth');
     } else {
-      // Check subscription
       try {
         await ref.read(paymentProvider.notifier).loadPlansAndSubscription();
       } catch (_) {}
+      if (!mounted) return;
       final sub = ref.read(paymentProvider).activeSubscription;
 
-      if (!mounted) return;
       if (sub == null || sub['status'] != 'ACTIVE') {
         context.go('/plans');
       } else {
@@ -77,6 +70,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(localeProvider);
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -106,31 +100,34 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                       children: [
                         // App Logo Image Badge
                         Container(
-                          width: 140,
-                          height: 140,
+                          width: 130,
+                          height: 130,
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
+                            color: AppTheme.primaryRoyalMaroon,
+                            borderRadius: BorderRadius.circular(28),
                             boxShadow: [
                               BoxShadow(
                                 color: AppTheme.secondaryGold.withValues(alpha: 0.35),
-                                blurRadius: 30,
-                                spreadRadius: 5,
+                                blurRadius: 28,
+                                spreadRadius: 4,
                               ),
                             ],
                             border: Border.all(
                               color: AppTheme.secondaryGold,
-                              width: 3,
+                              width: 2.5,
                             ),
                           ),
-                          child: ClipOval(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
                             child: Image.asset(
                               'assets/images/app_logo.png',
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) => Container(
                                 color: AppTheme.primaryRoyalMaroon,
                                 child: const Icon(
                                   Icons.favorite_rounded,
-                                  size: 64,
+                                  size: 60,
                                   color: AppTheme.secondaryGold,
                                 ),
                               ),
@@ -139,7 +136,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          "Mango Matrimony",
+                          ref.tr("app_name"),
                           style: GoogleFonts.playfairDisplay(
                             fontSize: 34,
                             fontWeight: FontWeight.bold,
@@ -149,7 +146,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "India's Trusted Family Matrimonial Network",
+                          ref.tr("tagline"),
                           style: GoogleFonts.outfit(
                             fontSize: 14,
                             color: Colors.white70,
@@ -187,7 +184,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                           const Icon(Icons.verified_user_rounded, color: AppTheme.secondaryGold, size: 14),
                           const SizedBox(width: 6),
                           Text(
-                            "100% Verified Profiles • Server Privacy Secured",
+                            ref.tr("splash_footer_trust"),
                             style: GoogleFonts.outfit(
                               color: Colors.white60,
                               fontSize: 12,

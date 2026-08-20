@@ -22,10 +22,14 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await _storage.read(key: AppConstants.tokenKey);
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
+          try {
+            final token = await _storage.read(key: AppConstants.tokenKey);
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+            final localeCode = await _storage.read(key: 'app_locale') ?? 'hi';
+            options.headers['Accept-Language'] = localeCode;
+          } catch (_) {}
           return handler.next(options);
         },
         onError: (DioException error, handler) {
@@ -52,19 +56,31 @@ class ApiClient {
   }
 
   Future<void> saveTokens({required String accessToken, required String refreshToken}) async {
-    await _storage.write(key: AppConstants.tokenKey, value: accessToken);
-    await _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
+    try {
+      await _storage.write(key: AppConstants.tokenKey, value: accessToken);
+      await _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
+    } catch (_) {}
   }
 
   Future<String?> getToken() async {
-    return await _storage.read(key: AppConstants.tokenKey);
+    try {
+      return await _storage.read(key: AppConstants.tokenKey);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<String?> getRefreshToken() async {
-    return await _storage.read(key: AppConstants.refreshTokenKey);
+    try {
+      return await _storage.read(key: AppConstants.refreshTokenKey);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> clearSession() async {
-    await _storage.deleteAll();
+    try {
+      await _storage.deleteAll();
+    } catch (_) {}
   }
 }

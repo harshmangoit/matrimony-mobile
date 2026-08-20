@@ -29,7 +29,7 @@ class MatrimonyApp extends ConsumerWidget {
     final currentLocale = ref.watch(localeProvider);
 
     return MaterialApp.router(
-      title: 'Mango Matrimony',
+      title: 'Matrimonial App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       locale: currentLocale,

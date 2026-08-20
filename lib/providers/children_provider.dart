@@ -50,6 +50,7 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final resp = await _apiClient.dio.get('/children');
+      if (!mounted) return;
       final list = (resp.data as List).map((x) => ChildProfileModel.fromJson(x)).toList();
       
       final currentSelected = state.selectedChild != null && list.any((c) => c.id == state.selectedChild!.id)
@@ -66,6 +67,7 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
         await loadVisibilitySettings(currentSelected.id);
       }
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
@@ -79,11 +81,14 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final resp = await _apiClient.dio.post('/children', data: data);
+      if (!mounted) return false;
       final newChild = ChildProfileModel.fromJson(resp.data);
       await loadChildren();
+      if (!mounted) return false;
       selectChild(newChild);
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.error.toString());
       return false;
     }
@@ -93,11 +98,14 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
     state = state.copyWith(isLoading: true, errorMessage: null, editLockMessage: null);
     try {
       final resp = await _apiClient.dio.put('/children/$childId', data: data);
+      if (!mounted) return false;
       final updated = ChildProfileModel.fromJson(resp.data);
       await loadChildren();
+      if (!mounted) return false;
       selectChild(updated);
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       if (e.response?.statusCode == 403) {
         // 7-DAY EDIT LOCK EXCEPTION!
         final msg = e.response?.data['detail']?.toString() ?? e.error.toString();
@@ -115,9 +123,11 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
       await _apiClient.dio.patch('/children/$childId/status', data: {
         'status': newStatus,
       });
+      if (!mounted) return false;
       await loadChildren();
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.error.toString());
       return false;
     }
@@ -126,6 +136,7 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
   Future<void> loadVisibilitySettings(int childId) async {
     try {
       final resp = await _apiClient.dio.get('/children/$childId/visibility');
+      if (!mounted) return;
       final vis = ProfileVisibilityModel.fromJson(resp.data);
       state = state.copyWith(visibilitySettings: vis);
     } catch (_) {}
@@ -135,10 +146,12 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final resp = await _apiClient.dio.put('/children/$childId/visibility', data: vis.toJson());
+      if (!mounted) return false;
       final updatedVis = ProfileVisibilityModel.fromJson(resp.data);
       state = state.copyWith(visibilitySettings: updatedVis, isLoading: false);
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isLoading: false, errorMessage: e.error.toString());
       return false;
     }

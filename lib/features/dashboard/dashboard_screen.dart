@@ -19,9 +19,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
+    Future.microtask(() async {
+      await ref.read(paymentProvider.notifier).loadPlansAndSubscription();
+      final sub = ref.read(paymentProvider).activeSubscription;
+      if (mounted && (sub == null || sub['status'] != 'ACTIVE')) {
+        context.go('/plans');
+        return;
+      }
       ref.read(childrenProvider.notifier).loadChildren();
-      ref.read(paymentProvider.notifier).loadPlansAndSubscription();
     });
   }
 
@@ -38,10 +43,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       appBar: AppBar(
         title: Text(ref.tr("app_name")),
         actions: [
+          TextButton.icon(
+            onPressed: () async {
+              final currentCode = ref.read(localeProvider).languageCode;
+              final newCode = currentCode == 'hi' ? 'en' : 'hi';
+              await ref.read(localeProvider.notifier).setLocale(Locale(newCode));
+              ref.read(childrenProvider.notifier).loadChildren();
+              ref.read(authProvider.notifier).reloadProfile();
+            },
+            icon: const Icon(Icons.language_rounded, size: 18, color: AppTheme.primaryRoyalMaroon),
+            label: Text(
+              ref.watch(localeProvider).languageCode == 'hi' ? 'English' : 'हिंदी',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryRoyalMaroon),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push('/settings'),
-          )
+          ),
         ],
       ),
       body: childrenState.isLoading
@@ -88,7 +107,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton.icon(
-                          onPressed: () => context.push('/profile-editor'),
+                          onPressed: () {
+                            final count = childrenState.children.length;
+                            final maxAllowed = parent?.maxProfilesAllowed ?? 1;
+                            if (count >= maxAllowed) {
+                              _showSlotLimitDialog(context, count, maxAllowed);
+                            } else {
+                              context.push('/profile-editor');
+                            }
+                          },
                           icon: const Icon(Icons.add, size: 16),
                           label: Text(ref.tr("add_candidate")),
                           style: ElevatedButton.styleFrom(
@@ -125,6 +152,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildAccountHeader(parent, Map<String, dynamic>? activeSub) {
     final subPlan = activeSub?['plan_name'] ?? parent?.subscriptionStatus ?? 'FREE';
+    final category = activeSub?['category'] ?? parent?.category ?? 'D';
+    final allowedSlots = activeSub?['allowed_slots'] ?? parent?.maxProfilesAllowed ?? 1;
+    final usedSlots = activeSub?['used_slots'] ?? ref.read(childrenProvider).children.length;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -143,55 +173,83 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${ref.tr("dashboard_welcome")} ${parent?.fullName ?? ''}",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${ref.tr("dashboard_welcome")} ${parent?.fullName ?? ''}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      parent?.email ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  parent?.email ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryGold,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ],
-            ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.workspace_premium_rounded, size: 14, color: Colors.black87),
+                    const SizedBox(width: 4),
+                    Text(
+                      subPlan.toString(),
+                      style: GoogleFonts.outfit(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.secondaryGold,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.workspace_premium_rounded, size: 14, color: Colors.black87),
-                const SizedBox(width: 4),
-                Text(
-                  "${ref.tr(subPlan.toString().toUpperCase())} ${ref.tr("PLAN")}",
-                  style: GoogleFonts.outfit(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                  ),
+          const Divider(color: Colors.white24, height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  "${ref.tr("category_label")}: $category",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  "${ref.tr("slots_used")}: $usedSlots / $allowedSlots",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -402,6 +460,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showSlotLimitDialog(BuildContext context, int count, int maxAllowed) {
+    showDialog(
+      context: context,
+      builder: (dlgContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            const Icon(Icons.lock_rounded, color: Colors.orange, size: 26),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                ref.tr("slot_limit_reached_title"),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          "${ref.tr("slot_limit_reached_desc")} ($count / $maxAllowed). ${ref.tr("buy_slot_prompt")}",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dlgContext).pop(),
+            child: Text(ref.tr("cancel_btn")),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(dlgContext).pop();
+              context.push('/plans');
+            },
+            icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
+            label: Text(ref.tr("buy_additional_slot_btn")),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryRoyalMaroon,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
