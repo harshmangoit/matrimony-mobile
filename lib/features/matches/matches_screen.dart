@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/profile_image_widget.dart';
 import '../../providers/children_provider.dart';
 import '../../providers/matches_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../core/constants/indian_data_constants.dart';
 
 class MatchesScreen extends ConsumerStatefulWidget {
   const MatchesScreen({super.key});
@@ -111,19 +113,10 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
           children: [
             Row(
               children: [
-                CircleAvatar(
+                ProfileImageWidget(
+                  photoUrl: match.photoUrl,
+                  name: match.displayName,
                   radius: 26,
-                  backgroundColor: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.1),
-                  child: match.photoUrl != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(26),
-                          child: Image.network(
-                            match.photoUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 26),
-                          ),
-                        )
-                      : const Icon(Icons.person, size: 26, color: AppTheme.primaryRoyalMaroon),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -208,7 +201,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              "${ref.tr("profession")}: ${match.profession}",
+                              "${ref.tr("profession")}: ${IndianDataConstants.formatValue(match.profession, ref.watch(localeProvider).languageCode == 'hi')}",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 12),
@@ -225,7 +218,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              "${ref.tr("qualification")}: ${match.education}",
+                              "${ref.tr("qualification")}: ${IndianDataConstants.formatValue(match.education, ref.watch(localeProvider).languageCode == 'hi')}",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 12),

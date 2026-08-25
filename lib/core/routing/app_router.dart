@@ -10,11 +10,8 @@ import '../../features/matches/match_detail_screen.dart';
 import '../../features/payments/plans_screen.dart';
 import '../../features/payments/checkout_screen.dart';
 import '../../features/settings/settings_screen.dart';
-import '../../providers/auth_provider.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-
   return GoRouter(
     initialLocation: '/splash',
     routes: [
@@ -24,9 +21,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/',
-        builder: (context, state) => authState.isAuthenticated
-            ? const DashboardScreen()
-            : const AuthScreen(),
+        builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
         path: '/auth',

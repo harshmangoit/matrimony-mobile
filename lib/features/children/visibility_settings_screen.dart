@@ -34,6 +34,7 @@ class _VisibilitySettingsScreenState extends ConsumerState<VisibilitySettingsScr
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(localeProvider);
     final childrenState = ref.watch(childrenProvider);
     final child = childrenState.selectedChild;
 
@@ -89,85 +90,85 @@ class _VisibilitySettingsScreenState extends ConsumerState<VisibilitySettingsScr
                   _buildCategoryTitle(ref.tr("my_candidates")),
                   _buildToggleTile(
                     ref.tr("full_name_label"),
-                    "Display candidate's first and last name to verified matches",
+                    ref.tr("visibility_sub_name"),
                     _currentVis!.showName,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showName: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("dob"),
-                    "Display candidate's calculated age in match feed",
+                    ref.tr("visibility_sub_age"),
                     _currentVis!.showAge,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showAge: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("gender"),
-                    "Display candidate's gender to verified matches",
+                    ref.tr("visibility_sub_gender"),
                     _currentVis!.showGender,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showGender: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("height_cm"),
-                    "Display candidate's height (in cm)",
+                    ref.tr("visibility_sub_height"),
                     _currentVis!.showHeight,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showHeight: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("marital_status"),
-                    "Display candidate's marital status",
+                    ref.tr("visibility_sub_marital"),
                     _currentVis!.showMaritalStatus,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showMaritalStatus: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("mother_tongue"),
-                    "Display candidate's mother tongue / primary language",
+                    ref.tr("visibility_sub_mother_tongue"),
                     _currentVis!.showMotherTongue,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showMotherTongue: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("education_career_sec"),
-                    "Display highest education and degree details",
+                    ref.tr("visibility_sub_education"),
                     _currentVis!.showEducation,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showEducation: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("profession"),
-                    "Display job title, company & work location",
+                    ref.tr("visibility_sub_profession"),
                     _currentVis!.showProfession,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showProfession: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("family_location_sec"),
-                    "Display current city, state & country",
+                    ref.tr("visibility_sub_location"),
                     _currentVis!.showLocation,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showLocation: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("father_name"),
-                    "Display family background & parents' details",
+                    ref.tr("visibility_sub_family"),
                     _currentVis!.showFamily,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showFamily: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("bio_photo_sec"),
-                    "Display profile photos in match feed & details",
+                    ref.tr("visibility_sub_photo"),
                     _currentVis!.showPhotos,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showPhotos: val)),
                   ),
                   _buildToggleTile(
                     ref.tr("candidate_bio"),
-                    "Display candidate introduction / about description",
+                    ref.tr("visibility_sub_about"),
                     _currentVis!.showAbout,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showAbout: val)),
                   ),
                   _buildToggleTile(
-                    "Hobbies / Interests",
-                    "Display candidate's hobbies & interests",
+                    ref.tr("hobbies_interests"),
+                    ref.tr("visibility_sub_hobbies"),
                     _currentVis!.showHobbies,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showHobbies: val)),
                   ),
                   _buildToggleTile(
-                    "Lifestyle & Values",
-                    "Display lifestyle choices & family values description",
+                    ref.tr("lifestyle_values"),
+                    ref.tr("visibility_sub_lifestyle"),
                     _currentVis!.showLifestyle,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showLifestyle: val)),
                   ),
@@ -190,7 +191,7 @@ class _VisibilitySettingsScreenState extends ConsumerState<VisibilitySettingsScr
                   ),
                   _buildToggleTile(
                     ref.tr("city"),
-                    "Allow verified matches to view full street address",
+                    ref.tr("visibility_sub_exact_address"),
                     _currentVis!.showExactAddress,
                     (val) => setState(() => _currentVis = _currentVis!.copyWith(showExactAddress: val)),
                     isSensitive: true,
@@ -212,7 +213,7 @@ class _VisibilitySettingsScreenState extends ConsumerState<VisibilitySettingsScr
                                   .updateVisibilitySettings(widget.childId, _currentVis!);
                               if (ok) {
                                 scaffoldMessenger.showSnackBar(
-                                  const SnackBar(content: Text("Privacy rules updated & enforced on server!")),
+                                  SnackBar(content: Text(ref.tr("privacy_updated_success"))),
                                 );
                                 navigator.pop();
                               }

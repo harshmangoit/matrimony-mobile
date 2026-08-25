@@ -35,4 +35,18 @@ class AppConstants {
   static const String parentIdKey = "parent_id";
   static const String parentNameKey = "parent_name";
   static const String parentEmailKey = "parent_email";
+
+  static String get googleClientId {
+    try {
+      if (dotenv.isInitialized) {
+        final id = dotenv.env['GOOGLE_CLIENT_ID'];
+        if (id != null && id.trim().isNotEmpty) {
+          return id.trim();
+        }
+      }
+    } catch (_) {}
+    const envId = String.fromEnvironment('GOOGLE_CLIENT_ID');
+    if (envId.isNotEmpty) return envId;
+    return "747863361044-6939j9n52n7cqvqq0tqunhtu32q3nkbk.apps.googleusercontent.com";
+  }
 }

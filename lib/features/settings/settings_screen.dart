@@ -116,6 +116,7 @@ class SettingsScreen extends ConsumerWidget {
                           await ref.read(localeProvider.notifier).setLocale(Locale(langCode));
                           ref.read(childrenProvider.notifier).loadChildren();
                           ref.read(authProvider.notifier).reloadProfile();
+                          ref.read(paymentProvider.notifier).loadPlansAndSubscription();
                         }
                       },
                     ),
@@ -152,7 +153,7 @@ class SettingsScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                "Status: ${paymentState.activeSubscription?['status'] ?? 'ACTIVE'}",
+                                "${ref.tr('status_label')}: ${ref.tr(paymentState.activeSubscription?['status'] ?? 'ACTIVE')}",
                                 style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -236,9 +237,85 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Delete Account Button (Apple Store Guideline 5.1.1(v) Compliance)
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: TextButton.icon(
+                onPressed: () => _showDeleteAccountDialog(context, ref),
+                icon: const Icon(Icons.delete_forever_rounded, color: Colors.redAccent),
+                label: Text(
+                  ref.tr("delete_account"),
+                  style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                style: TextButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
             const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                ref.tr("delete_account_title"),
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          ref.tr("delete_account_desc"),
+          style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(ref.tr("cancel_btn")),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final success = await ref.read(authProvider.notifier).deleteAccount();
+              if (context.mounted) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(ref.tr("account_deleted_toast")), backgroundColor: Colors.red),
+                  );
+                  context.go('/auth');
+                } else {
+                  final err = ref.read(authProvider).errorMessage ?? ref.tr("generic_error_msg");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(err), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text(
+              ref.tr("delete_account_confirm_btn"),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

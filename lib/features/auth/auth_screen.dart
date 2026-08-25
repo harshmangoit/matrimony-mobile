@@ -233,11 +233,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                             const SizedBox(height: 14),
                           ],
 
-                          // Dynamic height for TabBarView to fit Login (250px) vs Register (390px)
+                          // Dynamic height for TabBarView to fit Login (340px) vs Register (480px)
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 250),
                             curve: Curves.easeInOut,
-                            height: _tabController.index == 0 ? 250 : 390,
+                            height: _tabController.index == 0 ? 240 : 410,
                             child: TabBarView(
                               controller: _tabController,
                               children: [
@@ -259,31 +259,71 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildLanguageOption({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.secondaryGold : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+  /*
+  Widget _buildGoogleSignInButton(AuthState authState) {
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            const Expanded(child: Divider(color: AppTheme.borderLight, thickness: 1)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                ref.tr("or_divider"),
+                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Expanded(child: Divider(color: AppTheme.borderLight, thickness: 1)),
+          ],
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.black : Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: OutlinedButton(
+            onPressed: authState.isLoading
+                ? null
+                : () async {
+                    final success = await ref.read(authProvider.notifier).loginWithGoogle();
+                    if (success && mounted) {
+                      await ref.read(paymentProvider.notifier).loadPlansAndSubscription();
+                      final sub = ref.read(paymentProvider).activeSubscription;
+                      if (mounted) {
+                        if (sub != null && sub['status'] == 'ACTIVE') {
+                          context.go('/dashboard');
+                        } else {
+                          context.go('/plans');
+                        }
+                      }
+                    }
+                  },
+            style: OutlinedButton.styleFrom(
+              backgroundColor: Colors.white,
+              side: const BorderSide(color: Color(0xFFDADCE0), width: 1.2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const GoogleLogoWidget(size: 20),
+                const SizedBox(width: 10),
+                Text(
+                  ref.tr("google_sign_in"),
+                  style: GoogleFonts.outfit(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
+  */
 
   Widget _buildLoginForm(AuthState authState) {
     return Form(
@@ -301,12 +341,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                 prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.primaryRoyalMaroon),
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return "Email address is required";
-                if (!v.contains("@") || !v.contains(".")) return "Enter a valid email address";
+                if (v == null || v.trim().isEmpty) return ref.tr("email_required");
+                if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(v.trim())) {
+                  return ref.tr("email_format_error");
+                }
                 return null;
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             TextFormField(
               controller: _loginPasswordController,
               obscureText: _obscureLoginPassword,
@@ -321,7 +363,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                   onPressed: () => setState(() => _obscureLoginPassword = !_obscureLoginPassword),
                 ),
               ),
-              validator: (v) => (v == null || v.isEmpty) ? "Password is required" : null,
+              validator: (v) => (v == null || v.isEmpty) ? ref.tr("password_required") : null,
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -376,6 +418,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                       ),
               ),
             ),
+            // Google Sign-In button hidden as requested
+            // _buildGoogleSignInButton(authState),
           ],
         ),
       ),
@@ -396,7 +440,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                 hintText: ref.tr("full_name_hint"),
                 prefixIcon: const Icon(Icons.person_outline_rounded, color: AppTheme.primaryRoyalMaroon),
               ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? "Full name is required" : null,
+              validator: (v) => (v == null || v.trim().isEmpty) ? ref.tr("full_name_required") : null,
             ),
             const SizedBox(height: 10),
             TextFormField(
@@ -408,8 +452,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                 prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.primaryRoyalMaroon),
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return "Email is required";
-                if (!v.contains("@") || !v.contains(".")) return "Enter a valid email";
+                if (v == null || v.trim().isEmpty) return ref.tr("email_required");
+                if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(v.trim())) {
+                  return ref.tr("email_format_error");
+                }
                 return null;
               },
             ),
@@ -429,7 +475,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                 ),
               ),
               validator: (v) {
-                if (v == null || v.length < 6) return "Min 6 characters required";
+                if (v == null || v.length < 6) return ref.tr("min_password_length_error");
                 return null;
               },
             ),
@@ -449,7 +495,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                 ),
               ),
               validator: (v) {
-                if (v != _regPasswordController.text) return "Passwords do not match";
+                if (v != _regPasswordController.text) return ref.tr("passwords_dont_match_error");
                 return null;
               },
             ),
@@ -462,13 +508,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                     ? null
                     : () async {
                         if (_registerFormKey.currentState!.validate()) {
+                          final regEmail = _regEmailController.text.trim();
                           final success = await ref.read(authProvider.notifier).register(
                                 fullName: _regNameController.text.trim(),
-                                email: _regEmailController.text.trim(),
+                                email: regEmail,
                                 password: _regPasswordController.text,
                                 confirmPassword: _regConfirmPasswordController.text,
                               );
                           if (success && mounted) {
+                            _loginEmailController.text = regEmail;
+                            _regPasswordController.clear();
+                            _regConfirmPasswordController.clear();
+                            _tabController.animateTo(0);
+
                             await ref.read(paymentProvider.notifier).loadPlansAndSubscription();
                             if (mounted) {
                               context.go('/plans');
@@ -503,7 +555,35 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                       ),
               ),
             ),
+            // Google Sign-In button hidden as requested
+            // _buildGoogleSignInButton(authState),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.secondaryGold : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
         ),
       ),
     );
@@ -527,6 +607,34 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
             style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class GoogleLogoWidget extends StatelessWidget {
+  final double size;
+  const GoogleLogoWidget({super.key, this.size = 20});
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.network(
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+      height: size,
+      width: size,
+      fit: BoxFit.contain,
+      errorBuilder: (ctx, err, stack) => Container(
+        height: size,
+        width: size,
+        decoration: const BoxDecoration(
+          color: Color(0xFF4285F4),
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: const Text(
+          "G",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+        ),
       ),
     );
   }

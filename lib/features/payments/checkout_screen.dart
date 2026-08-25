@@ -68,7 +68,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("External Wallet Selected: ${response.walletName}")),
+      SnackBar(content: Text("${ref.tr("external_wallet_selected")}: ${response.walletName}")),
     );
   }
 
@@ -198,7 +198,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             Center(
               child: TextButton(
                 onPressed: () => Navigator.of(sheetContext).pop(),
-                child: const Text("CANCEL", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                child: Text(ref.tr("cancel_btn"), style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -272,7 +272,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     if (order == null) {
       return Scaffold(
         appBar: AppBar(title: Text(ref.tr("checkout_header"))),
-        body: const Center(child: Text("No active order found")),
+        body: Center(child: Text(ref.tr("no_active_order"))),
       );
     }
 

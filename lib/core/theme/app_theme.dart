@@ -56,6 +56,8 @@ class AppTheme {
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      errorMaxLines: 3,
+      errorStyle: const TextStyle(fontSize: 12, height: 1.2, color: accentCrimson),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: borderLight),

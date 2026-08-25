@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../core/theme/app_theme.dart';
+import '../../core/constants/indian_data_constants.dart';
 import '../../providers/children_provider.dart';
 import '../../providers/locale_provider.dart';
 
@@ -54,11 +55,87 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
   late TextEditingController _pincodeController;
   late TextEditingController _birthTimeController;
 
+  final _firstNameKey = GlobalKey<FormFieldState>();
+  final _lastNameKey = GlobalKey<FormFieldState>();
+  final _dobKey = GlobalKey<FormFieldState>();
+  final _heightKey = GlobalKey<FormFieldState>();
+  final _weightKey = GlobalKey<FormFieldState>();
+  final _pincodeKey = GlobalKey<FormFieldState>();
+  final _familyMembersKey = GlobalKey<FormFieldState>();
+  final _phoneKey = GlobalKey<FormFieldState>();
+  final _emailKey = GlobalKey<FormFieldState>();
+
   String _gender = "Male";
   String _maritalStatus = "Never Married";
-  String _complexion = "गोरा";
+  String _complexion = "Fair";
   String _searchType = "Engagement";
   String _manglikStatus = "Normal";
+
+  void _scrollToFirstError() {
+    final keysInOrder = [
+      _firstNameKey,
+      _lastNameKey,
+      _dobKey,
+      _heightKey,
+      _weightKey,
+      _pincodeKey,
+      _familyMembersKey,
+      _phoneKey,
+      _emailKey,
+    ];
+
+    for (final key in keysInOrder) {
+      if (key.currentState?.hasError == true && key.currentContext != null) {
+        Scrollable.ensureVisible(
+          key.currentContext!,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          alignment: 0.15,
+        );
+        break;
+      }
+    }
+  }
+
+  String _normalizeComplexion(String? val) {
+    if (val == null || val.trim().isEmpty) return "Fair";
+    final v = val.trim();
+    if (v == "गोरा" || v.toLowerCase() == "fair") return "Fair";
+    if (v == "गेहुँआ" || v.toLowerCase() == "wheatish") return "Wheatish";
+    if (v == "साँवला" || v.toLowerCase() == "dark") return "Dark";
+    return "Fair";
+  }
+
+  String _normalizeGender(String? val) {
+    if (val == null || val.trim().isEmpty) return "Male";
+    final v = val.trim().toLowerCase();
+    if (v == "female" || v == "महिला") return "Female";
+    return "Male";
+  }
+
+  String _normalizeMaritalStatus(String? val) {
+    if (val == null || val.trim().isEmpty) return "Never Married";
+    final v = val.trim();
+    if (v.contains("Divorced") || v.contains("तलाकशुदा")) return "Divorced";
+    if (v.contains("Widowed") || v.contains("विधवा") || v.contains("विधुर")) return "Widowed";
+    if (v.contains("Awaiting") || v.contains("विचाराधीन") || v.contains("विचारणीय") || v.contains("प्रतीक्षा")) return "Awaiting Divorce";
+    return "Never Married";
+  }
+
+  String _normalizeSearchType(String? val) {
+    if (val == null || val.trim().isEmpty) return "Engagement";
+    final v = val.trim();
+    if (v.contains("Remarriage") || v.contains("पुनर्विवाह")) return "Remarriage";
+    return "Engagement";
+  }
+
+  String _normalizeManglikStatus(String? val) {
+    if (val == null || val.trim().isEmpty) return "Normal";
+    final v = val.trim();
+    if (v.toLowerCase().contains("anshik") || v.contains("आंशिक")) return "Anshik";
+    if (v.toLowerCase().contains("manglik") || v.contains("मांगलिक")) return "Manglik";
+    return "Normal";
+  }
 
   @override
   void initState() {
@@ -72,12 +149,12 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
     _lastNameController = TextEditingController(text: targetChild?.lastName ?? "");
     _dobController = TextEditingController(text: targetChild?.dateOfBirth ?? "");
     _heightController = TextEditingController(text: targetChild != null && targetChild.heightCm > 0 ? targetChild.heightCm.toString() : "");
-    _motherTongueController = TextEditingController(text: targetChild?.motherTongue ?? "");
-    _educationController = TextEditingController(text: targetChild?.highestEducation ?? "");
-    _professionController = TextEditingController(text: targetChild?.profession ?? "");
+    _motherTongueController = TextEditingController(text: IndianDataConstants.formatValue(targetChild?.motherTongue, _isHindi));
+    _educationController = TextEditingController(text: IndianDataConstants.formatValue(targetChild?.highestEducation, _isHindi));
+    _professionController = TextEditingController(text: IndianDataConstants.formatValue(targetChild?.profession, _isHindi));
     _companyController = TextEditingController(text: targetChild?.company ?? "");
-    _cityController = TextEditingController(text: targetChild?.currentCity ?? "");
-    _stateController = TextEditingController(text: targetChild?.state ?? "");
+    _cityController = TextEditingController(text: IndianDataConstants.formatValue(targetChild?.currentCity, _isHindi));
+    _stateController = TextEditingController(text: IndianDataConstants.formatValue(targetChild?.state, _isHindi));
     _fatherNameController = TextEditingController(text: targetChild?.fatherName ?? "");
     _aboutController = TextEditingController(text: targetChild?.about ?? "");
     _phoneController = TextEditingController(text: targetChild?.phoneNumber ?? "");
@@ -101,11 +178,11 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
     _birthTimeController = TextEditingController(text: targetChild?.birthTime ?? "");
 
     if (targetChild != null) {
-      if (targetChild.gender.isNotEmpty) _gender = targetChild.gender;
-      if (targetChild.maritalStatus.isNotEmpty) _maritalStatus = targetChild.maritalStatus;
-      if (targetChild.complexion != null && targetChild.complexion!.isNotEmpty) _complexion = targetChild.complexion!;
-      if (targetChild.searchType.isNotEmpty) _searchType = targetChild.searchType;
-      if (targetChild.manglikStatus.isNotEmpty) _manglikStatus = targetChild.manglikStatus;
+      _gender = _normalizeGender(targetChild.gender);
+      _maritalStatus = _normalizeMaritalStatus(targetChild.maritalStatus);
+      _complexion = _normalizeComplexion(targetChild.complexion);
+      _searchType = _normalizeSearchType(targetChild.searchType);
+      _manglikStatus = _normalizeManglikStatus(targetChild.manglikStatus);
     }
   }
 
@@ -143,6 +220,157 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
     _pincodeController.dispose();
     _birthTimeController.dispose();
     super.dispose();
+  }
+
+  bool get _isHindi => ref.read(localeProvider).languageCode == 'hi';
+
+  List<String> get _motherTongues => IndianDataConstants.getMotherTongues(_isHindi);
+  List<String> get _educationOptions => IndianDataConstants.getEducationOptions(_isHindi);
+  List<String> get _professions => IndianDataConstants.getProfessionOptions(_isHindi);
+
+  Future<void> _selectState() async {
+    final oldState = _stateController.text;
+    await _showSearchablePicker(
+      context: context,
+      title: ref.tr("state"),
+      options: IndianDataConstants.getStates(_isHindi),
+      controller: _stateController,
+    );
+    if (_stateController.text != oldState) {
+      final availableCities = IndianDataConstants.getCitiesForState(_stateController.text, _isHindi);
+      if (!availableCities.contains(_cityController.text)) {
+        setState(() {
+          _cityController.text = "";
+        });
+      }
+    }
+  }
+
+  Future<void> _selectCity() async {
+    if (_stateController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ref.tr("select_state_first_prompt")),
+          duration: const Duration(seconds: 3),
+          backgroundColor: AppTheme.primaryRoyalMaroon,
+        ),
+      );
+      return;
+    }
+    final cities = IndianDataConstants.getCitiesForState(_stateController.text, _isHindi);
+    await _showSearchablePicker(
+      context: context,
+      title: ref.tr("city"),
+      options: cities,
+      controller: _cityController,
+    );
+  }
+
+  Future<void> _showSearchablePicker({
+    required BuildContext context,
+    required String title,
+    required List<String> options,
+    required TextEditingController controller,
+  }) async {
+    String searchQuery = "";
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setPickerState) {
+            final filtered = options.where((opt) {
+              return opt.toLowerCase().contains(searchQuery.toLowerCase());
+            }).toList();
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                top: 16,
+                left: 16,
+                right: 16,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(ctx).size.height * 0.6,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryRoyalMaroon),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: ref.tr("search_placeholder"),
+                        prefixIcon: const Icon(Icons.search, color: AppTheme.primaryRoyalMaroon),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      onChanged: (val) {
+                        setPickerState(() {
+                          searchQuery = val;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          if (searchQuery.trim().isNotEmpty)
+                            ListTile(
+                              leading: const Icon(Icons.add_circle_outline, color: AppTheme.primaryRoyalMaroon),
+                              title: Text("${ref.tr("custom_option")}: '${searchQuery.trim()}'"),
+                              onTap: () {
+                                setState(() {
+                                  controller.text = searchQuery.trim();
+                                });
+                                Navigator.pop(ctx);
+                              },
+                            ),
+                          Expanded(
+                            child: ListView.separated(
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final item = filtered[index];
+                                final isSelected = controller.text == item;
+                                return ListTile(
+                                  title: Text(item, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                                  trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryRoyalMaroon) : null,
+                                  onTap: () {
+                                    setState(() {
+                                      controller.text = item;
+                                    });
+                                    Navigator.pop(ctx);
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -192,17 +420,6 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
     bool available = false;
     bool isListening = false;
     String textResult = "";
-    
-    try {
-      available = await _speech.initialize(
-        onStatus: (val) => debugPrint('Speech status: $val'),
-        onError: (val) => debugPrint('Speech error: $val'),
-      );
-    } catch (e) {
-      available = false;
-    }
-
-    if (!mounted) return;
 
     showModalBottomSheet(
       context: context,
@@ -213,38 +430,71 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            void handleSpeechError(dynamic error) {
+              final errStr = error.toString();
+              debugPrint('Speech recognition error: $errStr');
+              setModalState(() {
+                isListening = false;
+                if (errStr.contains("error_permission")) {
+                  textResult = ref.tr("microphone_permission_error");
+                } else if (errStr.contains("error_speech_timeout") || errStr.contains("error_no_match")) {
+                  textResult = ref.tr("speech_no_match_error");
+                } else if (errStr.contains("error_service_unavailable")) {
+                  textResult = ref.tr("speech_service_unavailable_error");
+                } else {
+                  textResult = ref.tr("voice_unavailable_error");
+                }
+              });
+            }
+
             void startListening() async {
+              try {
+                available = await _speech.initialize(
+                  onStatus: (status) {
+                    debugPrint('Speech status: $status');
+                    if (status == 'done' || status == 'notListening') {
+                      setModalState(() => isListening = false);
+                    }
+                  },
+                  onError: (errorNotification) => handleSpeechError(errorNotification),
+                );
+              } catch (e) {
+                available = false;
+                handleSpeechError(e);
+                return;
+              }
+
               if (available) {
                 setModalState(() {
                   isListening = true;
                   textResult = "";
                 });
-                _speech.listen(
-                  // ignore: deprecated_member_use
-                  localeId: ref.read(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-US',
-                  onResult: (val) {
-                    setModalState(() {
-                      textResult = val.recognizedWords;
-                    });
-                  },
-                );
+                try {
+                  await _speech.listen(
+                    listenOptions: stt.SpeechListenOptions(
+                      localeId: ref.read(localeProvider).languageCode == 'hi' ? 'hi-IN' : 'en-US',
+                      listenFor: const Duration(seconds: 30),
+                      pauseFor: const Duration(seconds: 4),
+                    ),
+                    onResult: (val) {
+                      setModalState(() {
+                        textResult = val.recognizedWords;
+                      });
+                    },
+                  );
+                } catch (e) {
+                  handleSpeechError(e);
+                }
               } else {
                 setModalState(() {
-                  isListening = true;
-                  textResult = ref.tr("listening_voice");
+                  isListening = false;
+                  textResult = ref.tr("voice_unavailable_error");
                 });
-                await Future.delayed(const Duration(seconds: 2));
-                if (mounted && isListening) {
-                  setModalState(() {
-                    isListening = false;
-                    textResult = ref.tr("hi") == "हिंदी" ? "आदर्श वर / वधू" : "Ideal candidate profile";
-                  });
-                }
               }
             }
 
             void stopListening() {
-              if (available) {
+              if (_speech.isListening) {
                 _speech.stop();
               }
               setModalState(() {
@@ -331,7 +581,9 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             if (isListening) stopListening();
-                            if (textResult.isNotEmpty && textResult != ref.tr("listening_voice")) {
+                            if (textResult.isNotEmpty &&
+                                textResult != ref.tr("listening_voice") &&
+                                textResult != ref.tr("voice_unavailable_error")) {
                               controller.text = textResult;
                             }
                             Navigator.pop(context);
@@ -419,9 +671,11 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 children: [
                   Expanded(
                     child: TextFormField(
+                      key: _firstNameKey,
                       controller: _firstNameController,
                       decoration: InputDecoration(
                         labelText: ref.tr("first_name"),
+                        errorMaxLines: 3,
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.mic, color: Colors.grey),
                           onPressed: () => _startVoiceInput(_firstNameController, ref.tr("first_name")),
@@ -433,9 +687,11 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextFormField(
+                      key: _lastNameKey,
                       controller: _lastNameController,
                       decoration: InputDecoration(
                         labelText: ref.tr("last_name"),
+                        errorMaxLines: 3,
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.mic, color: Colors.grey),
                           onPressed: () => _startVoiceInput(_lastNameController, ref.tr("last_name")),
@@ -453,7 +709,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      initialValue: _gender,
+                      initialValue: ["Male", "Female"].contains(_gender) ? _gender : "Male",
                       decoration: InputDecoration(labelText: ref.tr("gender")),
                       items: [
                         DropdownMenuItem(value: "Male", child: Text(ref.tr("male"))),
@@ -467,12 +723,14 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextFormField(
+                      key: _dobKey,
                       controller: _dobController,
                       readOnly: true,
                       onTap: () => _selectDate(context),
                       decoration: InputDecoration(
                         labelText: ref.tr("dob"),
                         hintText: "YYYY-MM-DD",
+                        errorMaxLines: 3,
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.calendar_month_rounded, color: AppTheme.primaryRoyalMaroon),
                           onPressed: () => _selectDate(context),
@@ -507,16 +765,18 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 children: [
                   Expanded(
                     child: TextFormField(
+                      key: _heightKey,
                       controller: _heightController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: ref.tr("height_cm"),
                         hintText: ref.tr("hint_height"),
+                        errorMaxLines: 3,
                       ),
                       validator: (v) {
                         if (v != null && v.trim().isNotEmpty) {
                           final h = int.tryParse(v.trim());
-                          if (h == null || h < 100 || h > 250) return ref.tr("height_range_error");
+                          if (h == null || h < 90 || h > 250) return ref.tr("height_range_error");
                         }
                         return null;
                       },
@@ -526,7 +786,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      initialValue: _maritalStatus,
+                      initialValue: ["Never Married", "Divorced", "Widowed", "Awaiting Divorce"].contains(_maritalStatus) ? _maritalStatus : "Never Married",
                       decoration: InputDecoration(labelText: ref.tr("marital_status")),
                       items: [
                         DropdownMenuItem(value: "Never Married", child: Text(ref.tr("never_married"), overflow: TextOverflow.ellipsis)),
@@ -545,12 +805,33 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
 
               TextFormField(
                 controller: _motherTongueController,
+                readOnly: true,
+                onTap: () => _showSearchablePicker(
+                  context: context,
+                  title: ref.tr("mother_tongue"),
+                  options: _motherTongues,
+                  controller: _motherTongueController,
+                ),
                 decoration: InputDecoration(
                   labelText: ref.tr("mother_tongue"),
                   hintText: ref.tr("hint_mother_tongue"),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.mic, color: Colors.grey),
-                    onPressed: () => _startVoiceInput(_motherTongueController, ref.tr("mother_tongue")),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_drop_down_circle_outlined, color: AppTheme.primaryRoyalMaroon),
+                        onPressed: () => _showSearchablePicker(
+                          context: context,
+                          title: ref.tr("mother_tongue"),
+                          options: _motherTongues,
+                          controller: _motherTongueController,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.mic, color: Colors.grey),
+                        onPressed: () => _startVoiceInput(_motherTongueController, ref.tr("mother_tongue")),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -561,7 +842,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      initialValue: _searchType,
+                      initialValue: ["Engagement", "Remarriage"].contains(_searchType) ? _searchType : "Engagement",
                       decoration: InputDecoration(labelText: ref.tr("search_type")),
                       items: [
                         DropdownMenuItem(value: "Engagement", child: Text(ref.tr("search_type_engagement"), overflow: TextOverflow.ellipsis)),
@@ -576,7 +857,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      initialValue: _manglikStatus,
+                      initialValue: ["Normal", "Manglik", "Anshik"].contains(_manglikStatus) ? _manglikStatus : "Normal",
                       decoration: InputDecoration(labelText: ref.tr("manglik_status")),
                       items: [
                         DropdownMenuItem(value: "Normal", child: Text(ref.tr("manglik_status_normal"), overflow: TextOverflow.ellipsis)),
@@ -596,11 +877,20 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 children: [
                   Expanded(
                     child: TextFormField(
+                      key: _weightKey,
                       controller: _weightController,
                       keyboardType: TextInputType.number,
+                      validator: (v) {
+                        if (v != null && v.trim().isNotEmpty) {
+                          final w = double.tryParse(v.trim());
+                          if (w == null || w < 30 || w > 200) return ref.tr("weight_range_error");
+                        }
+                        return null;
+                      },
                       decoration: InputDecoration(
                         labelText: ref.tr("weight_kg"),
                         hintText: ref.tr("hint_weight"),
+                        errorMaxLines: 3,
                       ),
                     ),
                   ),
@@ -608,12 +898,12 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      initialValue: _complexion,
+                      initialValue: ["Fair", "Wheatish", "Dark"].contains(_complexion) ? _complexion : "Fair",
                       decoration: InputDecoration(labelText: ref.tr("complexion")),
                       items: [
-                        DropdownMenuItem(value: "गोरा", child: Text(ref.tr("complexion_fair"), overflow: TextOverflow.ellipsis)),
-                        DropdownMenuItem(value: "गेहुँआ", child: Text(ref.tr("complexion_wheatish"), overflow: TextOverflow.ellipsis)),
-                        DropdownMenuItem(value: "साँवला", child: Text(ref.tr("complexion_dark"), overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: "Fair", child: Text(ref.tr("complexion_fair"), overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: "Wheatish", child: Text(ref.tr("complexion_wheatish"), overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: "Dark", child: Text(ref.tr("complexion_dark"), overflow: TextOverflow.ellipsis)),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _complexion = val);
@@ -629,12 +919,33 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
 
               TextFormField(
                 controller: _educationController,
+                readOnly: true,
+                onTap: () => _showSearchablePicker(
+                  context: context,
+                  title: ref.tr("qualification"),
+                  options: _educationOptions,
+                  controller: _educationController,
+                ),
                 decoration: InputDecoration(
                   labelText: ref.tr("qualification"),
                   hintText: ref.tr("hint_education"),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.mic, color: Colors.grey),
-                    onPressed: () => _startVoiceInput(_educationController, ref.tr("qualification")),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_drop_down_circle_outlined, color: AppTheme.primaryRoyalMaroon),
+                        onPressed: () => _showSearchablePicker(
+                          context: context,
+                          title: ref.tr("qualification"),
+                          options: _educationOptions,
+                          controller: _educationController,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.mic, color: Colors.grey),
+                        onPressed: () => _startVoiceInput(_educationController, ref.tr("qualification")),
+                      ),
+                    ],
                   ),
                 ),
                 validator: (v) => v == null || v.trim().isEmpty ? ref.tr("field_required") : null,
@@ -646,12 +957,24 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _professionController,
+                      readOnly: true,
+                      onTap: () => _showSearchablePicker(
+                        context: context,
+                        title: ref.tr("profession"),
+                        options: _professions,
+                        controller: _professionController,
+                      ),
                       decoration: InputDecoration(
                         labelText: ref.tr("profession"),
                         hintText: ref.tr("hint_profession"),
                         suffixIcon: IconButton(
-                          icon: const Icon(Icons.mic, color: Colors.grey),
-                          onPressed: () => _startVoiceInput(_professionController, ref.tr("profession")),
+                          icon: const Icon(Icons.arrow_drop_down_circle_outlined, color: AppTheme.primaryRoyalMaroon),
+                          onPressed: () => _showSearchablePicker(
+                            context: context,
+                            title: ref.tr("profession"),
+                            options: _professions,
+                            controller: _professionController,
+                          ),
                         ),
                       ),
                     ),
@@ -681,12 +1004,23 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 children: [
                   Expanded(
                     child: TextFormField(
-                      controller: _cityController,
+                      controller: _stateController,
+                      readOnly: true,
+                      onTap: _selectState,
                       decoration: InputDecoration(
-                        labelText: ref.tr("city"),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.mic, color: Colors.grey),
-                          onPressed: () => _startVoiceInput(_cityController, ref.tr("city")),
+                        labelText: ref.tr("state"),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_drop_down_circle_outlined, color: AppTheme.primaryRoyalMaroon),
+                              onPressed: _selectState,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.mic, color: Colors.grey),
+                              onPressed: () => _startVoiceInput(_stateController, ref.tr("state")),
+                            ),
+                          ],
                         ),
                       ),
                       validator: (v) => v == null || v.trim().isEmpty ? ref.tr("field_required") : null,
@@ -695,12 +1029,23 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextFormField(
-                      controller: _stateController,
+                      controller: _cityController,
+                      readOnly: true,
+                      onTap: _selectCity,
                       decoration: InputDecoration(
-                        labelText: ref.tr("state"),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.mic, color: Colors.grey),
-                          onPressed: () => _startVoiceInput(_stateController, ref.tr("state")),
+                        labelText: ref.tr("city"),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_drop_down_circle_outlined, color: AppTheme.primaryRoyalMaroon),
+                              onPressed: _selectCity,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.mic, color: Colors.grey),
+                              onPressed: () => _startVoiceInput(_cityController, ref.tr("city")),
+                            ),
+                          ],
                         ),
                       ),
                       validator: (v) => v == null || v.trim().isEmpty ? ref.tr("field_required") : null,
@@ -758,10 +1103,12 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextFormField(
+                      key: _pincodeKey,
                       controller: _pincodeController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: ref.tr("pincode"),
+                        errorMaxLines: 3,
                       ),
                       validator: (v) {
                         if (v != null && v.trim().isNotEmpty) {
@@ -831,11 +1178,13 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextFormField(
+                      key: _familyMembersKey,
                       controller: _familyMembersController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: ref.tr("family_members_count"),
                         hintText: ref.tr("hint_family_members"),
+                        errorMaxLines: 3,
                       ),
                       validator: (v) {
                         if (v != null && v.trim().isNotEmpty) {
@@ -1034,11 +1383,13 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 children: [
                   Expanded(
                     child: TextFormField(
+                      key: _phoneKey,
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
                       decoration: InputDecoration(
                         labelText: ref.tr("phone_number"),
                         hintText: ref.tr("hint_phone"),
+                        errorMaxLines: 3,
                       ),
                       validator: (v) {
                         if (v != null && v.trim().isNotEmpty) {
@@ -1053,11 +1404,13 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextFormField(
+                      key: _emailKey,
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: ref.tr("candidate_email"),
                         hintText: ref.tr("hint_email"),
+                        errorMaxLines: 3,
                       ),
                       validator: (v) {
                         if (v != null && v.trim().isNotEmpty) {
@@ -1082,9 +1435,21 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                   onPressed: (childrenState.isLoading || isProfileLocked)
                       ? null
                       : () async {
-                          if (_formKey.currentState!.validate()) {
-                            final scaffoldMessenger = ScaffoldMessenger.of(context);
-                            final navigator = Navigator.of(context);
+                          if (!_formKey.currentState!.validate()) {
+                            _scrollToFirstError();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(ref.tr("form_validation_error_prompt")),
+                                backgroundColor: AppTheme.accentCrimson,
+                                duration: const Duration(seconds: 3),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                            return;
+                          }
+
+                          final scaffoldMessenger = ScaffoldMessenger.of(context);
+                          final navigator = Navigator.of(context);
 
                             final data = {
                               "first_name": _firstNameController.text.trim(),
@@ -1135,6 +1500,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                                   .read(childrenProvider.notifier)
                                   .createChild(data);
                             }
+                            if (!context.mounted) return;
 
                             if (ok) {
                               scaffoldMessenger.showSnackBar(
@@ -1146,15 +1512,55 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                               navigator.pop();
                             } else {
                               final err = ref.read(childrenProvider).errorMessage ?? ref.tr("generic_error_msg");
-                              scaffoldMessenger.showSnackBar(
-                                SnackBar(
-                                  content: Text(err),
-                                  backgroundColor: Colors.red.shade700,
-                                ),
-                              );
+                              final lowerErr = err.toLowerCase();
+                              if (lowerErr.contains('capacity') || lowerErr.contains('limit') || lowerErr.contains('क्षमता') || lowerErr.contains('सीमा')) {
+                                showDialog(
+                                  context: context,
+                                  builder: (dlgContext) => AlertDialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                    title: Row(
+                                      children: [
+                                        const Icon(Icons.lock_rounded, color: Colors.orange, size: 26),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            ref.tr("slot_limit_reached_title"),
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    content: Text(err),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(dlgContext).pop(),
+                                        child: Text(ref.tr("cancel_btn")),
+                                      ),
+                                      ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.of(dlgContext).pop();
+                                          context.push('/plans');
+                                        },
+                                        icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
+                                        label: Text(ref.tr("buy_additional_slot_btn")),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.primaryRoyalMaroon,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              } else {
+                                scaffoldMessenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(err),
+                                    backgroundColor: Colors.red.shade700,
+                                  ),
+                                );
+                              }
                             }
-                          }
-                        },
+                          },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryRoyalMaroon,
                     foregroundColor: Colors.white,
@@ -1173,14 +1579,14 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
+        ],
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildSectionTitle(String title) {
@@ -1234,7 +1640,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Unable to pick photo: $e")),
+          SnackBar(content: Text("${ref.tr("photo_pick_error")}: $e")),
         );
       }
     }
@@ -1289,11 +1695,11 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
             const SizedBox(height: 10),
             Row(
               children: [
-                _buildAvatarSampleTile("Groom 1", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300"),
+                _buildAvatarSampleTile(ref.tr("groom_1"), "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300"),
                 const SizedBox(width: 8),
-                _buildAvatarSampleTile("Bride 1", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300"),
+                _buildAvatarSampleTile(ref.tr("bride_1"), "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300"),
                 const SizedBox(width: 8),
-                _buildAvatarSampleTile("Groom 2", "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300"),
+                _buildAvatarSampleTile(ref.tr("groom_2"), "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300"),
               ],
             ),
             const SizedBox(height: 14),

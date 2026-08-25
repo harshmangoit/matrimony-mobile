@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/profile_image_widget.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/children_provider.dart';
 import '../../providers/payment_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../core/constants/indian_data_constants.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -151,10 +153,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildAccountHeader(parent, Map<String, dynamic>? activeSub) {
-    final subPlan = activeSub?['plan_name'] ?? parent?.subscriptionStatus ?? 'FREE';
+    final isHindi = ref.watch(localeProvider).languageCode == 'hi';
+    final rawSubPlan = activeSub?['plan_name'] ?? parent?.subscriptionStatus ?? 'FREE';
+    final subPlan = IndianDataConstants.formatValue(rawSubPlan.toString(), isHindi);
     final category = activeSub?['category'] ?? parent?.category ?? 'D';
-    final allowedSlots = activeSub?['allowed_slots'] ?? parent?.maxProfilesAllowed ?? 1;
-    final usedSlots = activeSub?['used_slots'] ?? ref.read(childrenProvider).children.length;
+    final allowedSlots = parent?.maxProfilesAllowed ?? activeSub?['allowed_slots'] ?? 1;
+    final usedSlots = ref.watch(childrenProvider).children.length;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -280,7 +284,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () => context.push('/profile-editor'),
+              onPressed: () {
+                final count = ref.read(childrenProvider).children.length;
+                final parent = ref.read(authProvider).parent;
+                final maxAllowed = parent?.maxProfilesAllowed ?? 1;
+                if (count >= maxAllowed) {
+                  _showSlotLimitDialog(context, count, maxAllowed);
+                } else {
+                  context.push('/profile-editor');
+                }
+              },
               icon: const Icon(Icons.add_circle_outline, size: 16),
               label: Text(ref.tr("create_profile_btn")),
               style: ElevatedButton.styleFrom(
@@ -321,17 +334,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
+                  ProfileImageWidget(
+                    photoUrl: profile.profilePhoto,
+                    name: profile.firstName,
                     radius: 24,
-                    backgroundColor: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.1),
-                    child: Text(
-                      profile.firstName.isNotEmpty ? profile.firstName[0].toUpperCase() : 'C',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: AppTheme.primaryRoyalMaroon,
-                      ),
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -357,11 +363,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ],
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          "${profile.calculatedAge} ${ref.tr("age_years")} • ${ref.tr(profile.gender)} • ${profile.profession ?? ''}",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                        Builder(
+                          builder: (context) {
+                            final isHindi = ref.watch(localeProvider).languageCode == 'hi';
+                            final profFormatted = IndianDataConstants.formatValue(profile.profession, isHindi);
+                            return Text(
+                              "${profile.calculatedAge} ${ref.tr("age_years")} • ${ref.tr(profile.gender)} • ${profFormatted.isNotEmpty ? profFormatted : ''}",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                            );
+                          },
                         ),
                       ],
                     ),

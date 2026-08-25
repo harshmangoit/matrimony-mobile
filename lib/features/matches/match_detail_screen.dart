@@ -6,8 +6,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/profile_image_widget.dart';
 import '../../providers/api_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../core/constants/indian_data_constants.dart';
 
 class MatchDetailScreen extends ConsumerStatefulWidget {
   final int candidateId;
@@ -78,7 +80,11 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
   Future<void> _openWhatsApp(String phone) async {
     final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
     final appTitle = ref.tr("app_name");
-    final Uri url = Uri.parse('https://wa.me/$cleanPhone?text=Namaste!%20I%20saw%20your%20matrimonial%20profile%20on%20$appTitle.');
+    final isHindi = ref.watch(localeProvider).languageCode == 'hi';
+    final msg = isHindi
+        ? "नमस्ते! मैंने $appTitle पर आपका वैवाहिक प्रोफाइल देखा।"
+        : "Namaste! I saw your matrimonial profile on $appTitle.";
+    final Uri url = Uri.parse('https://wa.me/$cleanPhone?text=${Uri.encodeComponent(msg)}');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else if (mounted) {
@@ -89,26 +95,39 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
   }
 
   void _shareProfile(Map<String, dynamic> profile, int score) {
-    final name = profile['first_name'] != null ? "${profile['first_name']} ${profile['last_name'] ?? ''}".trim() : "Verified Candidate";
-    final age = profile['calculated_age'] != null ? "${profile['calculated_age']} Yrs" : "";
-    final edu = profile['highest_education'] ?? '';
-    final prof = profile['profession'] ?? '';
-    final city = profile['current_city'] ?? '';
+    final isHindi = ref.read(localeProvider).languageCode == 'hi';
+    final name = profile['first_name'] != null ? "${profile['first_name']} ${profile['last_name'] ?? ''}".trim() : ref.tr("candidate_profile");
+    final ageStr = profile['calculated_age'] != null ? "${profile['calculated_age']} ${ref.tr("age_years")}" : "";
+    final genderStr = profile['gender'] != null ? ref.tr(profile['gender'].toString().toLowerCase()) : "";
+    final eduStr = profile['highest_education'] != null ? IndianDataConstants.formatValue(profile['highest_education'].toString(), isHindi) : "";
+    final profStr = profile['profession'] != null ? IndianDataConstants.formatValue(profile['profession'].toString(), isHindi) : "";
+    final cityStr = profile['current_city'] != null ? IndianDataConstants.formatValue(profile['current_city'].toString(), isHindi) : "";
 
-    final shareText = '''
-🌸 Matrimonial App - Matrimonial Profile Share 🌸
+    final shareText = isHindi ? '''
+🌸 ${ref.tr("app_name")} - वैवाहिक विवरण साझा 🌸
+
+${ref.tr("candidate_profile")}: $name
+${ref.tr("dob")}: $ageStr $genderStr
+${ref.tr("qualification")}: $eduStr
+${ref.tr("profession")}: $profStr
+${ref.tr("city")}: $cityStr
+${ref.tr("compatibility_match")}: $score%
+
+${ref.tr("tagline")}!
+''' : '''
+🌸 ${ref.tr("app_name")} - Candidate Profile Share 🌸
 
 Candidate: $name
-Age/Gender: $age ${profile['gender'] ?? ''}
-Education: $edu
-Profession: $prof
-Location: $city
+Age / Gender: $ageStr $genderStr
+Education: $eduStr
+Profession: $profStr
+Location: $cityStr
 Compatibility Match Score: $score%
 
-Find compatible, verified family matches on Matrimonial app!
+Find verified matrimonial matches on ${ref.tr("app_name")}!
 ''';
 
-    Share.share(shareText, subject: "Matrimonial Profile - $name");
+    Share.share(shareText, subject: "${ref.tr("candidate_profile")} - $name");
   }
 
   @override
@@ -170,15 +189,10 @@ Find compatible, verified family matches on Matrimonial app!
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      CircleAvatar(
+                      ProfileImageWidget(
+                        photoUrl: profile['profile_photo'],
+                        name: name,
                         radius: 30,
-                        backgroundColor: AppTheme.primaryRoyalMaroon.withValues(alpha: 0.12),
-                        child: profile['profile_photo'] != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(30),
-                                child: Image.network(profile['profile_photo'], fit: BoxFit.cover),
-                              )
-                            : const Icon(Icons.person, size: 34, color: AppTheme.primaryRoyalMaroon),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -350,7 +364,7 @@ Find compatible, verified family matches on Matrimonial app!
               leading: Icon(icon, color: AppTheme.primaryRoyalMaroon),
               title: Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
               subtitle: Text(
-                profile[key].toString(),
+                IndianDataConstants.formatValue(profile[key].toString(), ref.watch(localeProvider).languageCode == 'hi'),
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
               ),
             ),

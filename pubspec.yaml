@@ -24,6 +24,7 @@ dependencies:
   url_launcher: ^6.2.5
   share_plus: ^10.0.0
   speech_to_text: ^7.4.0
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:

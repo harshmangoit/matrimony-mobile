@@ -40,6 +40,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires microphone access to record voice input for candidate profiles.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app requires speech recognition to allow filling candidate profiles using voice input.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires photo library access to allow parents to upload profile pictures for candidate profiles.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires camera access to allow parents to take photos for candidate profiles.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>phonepe</string>

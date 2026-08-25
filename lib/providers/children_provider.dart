@@ -89,7 +89,10 @@ class ChildrenNotifier extends StateNotifier<ChildrenState> {
       return true;
     } on DioException catch (e) {
       if (!mounted) return false;
-      state = state.copyWith(isLoading: false, errorMessage: e.error.toString());
+      final msg = (e.response?.data != null && e.response?.data['detail'] != null)
+          ? e.response?.data['detail'].toString()
+          : (e.error?.toString() ?? "Failed to create candidate profile");
+      state = state.copyWith(isLoading: false, errorMessage: msg);
       return false;
     }
   }
